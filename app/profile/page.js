@@ -66,15 +66,15 @@ export default function ProfileSetup() {
   };
 
   const handleDomainToggle = (domain) => {
-    setSelectedDomains(prev => 
-      prev.includes(domain) 
+    setSelectedDomains(prev =>
+      prev.includes(domain)
         ? prev.filter(d => d !== domain)
         : [...prev, domain]
     );
   };
 
   const handleDepartmentToggle = (department) => {
-    setSelectedDepartments(prev => 
+    setSelectedDepartments(prev =>
       prev.includes(department)
         ? prev.filter(d => d !== department)
         : [...prev, department]
@@ -132,6 +132,32 @@ export default function ProfileSetup() {
                   placeholder="Enter your registration number"
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="studentType">Student Type</Label>
+                <Select onValueChange={setStudentType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your student type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ug">
+                      <div className="flex items-center gap-2">
+                        <span>Undergraduate</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pg">
+                      <div className="flex items-center gap-2">
+                        <span>Postgraduate</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="masters">
+                      <div className="flex items-center gap-2">
+                        <span>Master's</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
