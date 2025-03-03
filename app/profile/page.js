@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { db } from "../../firebase";
@@ -19,12 +19,15 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, Briefcase, GraduationCap, Save } from "lucide-react";
+import { GraduationCap, Briefcase, Save } from "lucide-react";
 
 export default function ProfileSetup() {
   const { user } = useAuth();
   const router = useRouter();
+
+  // State Variables
   const [role, setRole] = useState("");
+  const [studentType, setStudentType] = useState(""); // ✅ Fix: Added missing state
   const [departments, setDepartments] = useState([]);
   const [domains, setDomains] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
@@ -39,6 +42,7 @@ export default function ProfileSetup() {
     const fetchLists = async () => {
       const deptSnapshot = await getDocs(collection(db, "departments"));
       setDepartments(deptSnapshot.docs.map(doc => doc.data().name));
+
       const domainSnapshot = await getDocs(collection(db, "domains"));
       setDomains(domainSnapshot.docs.map(doc => doc.data().name));
     };
@@ -46,38 +50,39 @@ export default function ProfileSetup() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!role || !name || (role === "student" && (!registrationNumber || !bio || !cgpa)) || (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0))) {
+    if (!role || !name || 
+        (role === "student" && (!registrationNumber || !bio || !cgpa || !studentType)) ||
+        (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0))) {
       toast.error("Please fill all required fields.");
       return;
     }
+
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       email: user.email,
       role,
       name,
       registrationNumber: role === "student" ? registrationNumber : "",
+      studentType: role === "student" ? studentType : "",
       empId: role === "faculty" ? empId : "",
       bio: role === "student" ? bio : "",
       cgpa: role === "student" ? cgpa : "",
       facultyDepartment: role === "faculty" ? selectedDepartments : null,
       facultyDomains: role === "faculty" ? selectedDomains : null,
     });
+
     router.push(role === "student" ? "/dashboard/student" : "/dashboard/faculty");
   };
 
   const handleDomainToggle = (domain) => {
     setSelectedDomains(prev =>
-      prev.includes(domain)
-        ? prev.filter(d => d !== domain)
-        : [...prev, domain]
+      prev.includes(domain) ? prev.filter(d => d !== domain) : [...prev, domain]
     );
   };
 
   const handleDepartmentToggle = (department) => {
     setSelectedDepartments(prev =>
-      prev.includes(department)
-        ? prev.filter(d => d !== department)
-        : [...prev, department]
+      prev.includes(department) ? prev.filter(d => d !== department) : [...prev, department]
     );
   };
 
@@ -87,7 +92,7 @@ export default function ProfileSetup() {
         <CardHeader>
           <CardTitle className="text-2xl">Complete Your Profile</CardTitle>
           <CardDescription>
-            Please provide your information to get started
+            Please provide your information to get started.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -96,6 +101,7 @@ export default function ProfileSetup() {
             <Input
               id="name"
               placeholder="Enter your full name"
+              value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
@@ -130,6 +136,7 @@ export default function ProfileSetup() {
                 <Input
                   id="regNo"
                   placeholder="Enter your registration number"
+                  value={registrationNumber}
                   onChange={(e) => setRegistrationNumber(e.target.value)}
                 />
               </div>
@@ -141,21 +148,9 @@ export default function ProfileSetup() {
                     <SelectValue placeholder="Select your student type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="ug">
-                      <div className="flex items-center gap-2">
-                        <span>Undergraduate</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="pg">
-                      <div className="flex items-center gap-2">
-                        <span>Postgraduate</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="masters">
-                      <div className="flex items-center gap-2">
-                        <span>Master's</span>
-                      </div>
-                    </SelectItem>
+                    <SelectItem value="ug">Undergraduate</SelectItem>
+                    <SelectItem value="pg">Postgraduate</SelectItem>
+                    <SelectItem value="masters">Master's</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -166,6 +161,7 @@ export default function ProfileSetup() {
                   id="bio"
                   placeholder="Tell us about yourself"
                   className="min-h-[100px]"
+                  value={bio}
                   onChange={(e) => setBio(e.target.value)}
                 />
               </div>
@@ -179,6 +175,7 @@ export default function ProfileSetup() {
                   min="0"
                   max="10"
                   placeholder="Enter your CGPA"
+                  value={cgpa}
                   onChange={(e) => setCgpa(e.target.value)}
                 />
               </div>
@@ -192,6 +189,7 @@ export default function ProfileSetup() {
                 <Input
                   id="empId"
                   placeholder="Enter your employee ID"
+                  value={empId}
                   onChange={(e) => setEmpId(e.target.value)}
                 />
               </div>
@@ -199,36 +197,11 @@ export default function ProfileSetup() {
               <div className="space-y-2">
                 <Label>Departments</Label>
                 <ScrollArea className="h-[100px] border rounded-md p-4">
-                  <div className="flex flex-wrap gap-2">
-                    {departments.map(dept => (
-                      <Badge
-                        key={dept}
-                        variant={selectedDepartments.includes(dept) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => handleDepartmentToggle(dept)}
-                      >
-                        {dept}
-                      </Badge>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Domains</Label>
-                <ScrollArea className="h-[100px] border rounded-md p-4">
-                  <div className="flex flex-wrap gap-2">
-                    {domains.map(domain => (
-                      <Badge
-                        key={domain}
-                        variant={selectedDomains.includes(domain) ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => handleDomainToggle(domain)}
-                      >
-                        {domain}
-                      </Badge>
-                    ))}
-                  </div>
+                  {departments.map(dept => (
+                    <Badge key={dept} onClick={() => handleDepartmentToggle(dept)}>
+                      {dept}
+                    </Badge>
+                  ))}
                 </ScrollArea>
               </div>
             </div>
