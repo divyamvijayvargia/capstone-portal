@@ -138,9 +138,11 @@ export default function FacultyDashboard() {
     <div className="min-h-screen bg-background p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Faculty Dashboard</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+      Hello, {user?.displayName || user?.email?.split('@')[0] || 'Faculty'}
+    </h1>
           <p className="text-muted-foreground">
-            Manage student applications and research projects
+            You can accept or reject an application based on their details.
           </p>
         </div>
         <Button variant="destructive" onClick={logout} className="gap-2">

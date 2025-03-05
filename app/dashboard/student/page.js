@@ -144,7 +144,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Student Dashboard</h1>
+      <h1 className="text-3xl font-bold">Hello, {user?.displayName || user?.email?.split('@')[0] || 'Student'}</h1>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/student/profile")} className="gap-2">
             <Settings className="h-4 w-4" />
