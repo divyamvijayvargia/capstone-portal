@@ -3,23 +3,24 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import { db } from "../../../firebase";
-import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, query, where, deleteDoc, getDoc } from "firebase/firestore"; // Added getDoc import
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, Settings, Trash2 } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
   const router = useRouter();
   const [faculties, setFaculties] = useState([]);
+  const [appliedFaculties, setAppliedFaculties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("all");
   const [domains, setDomains] = useState([]);
-  const [appliedFaculties, setAppliedFaculties] = useState(new Set());
 
   // Ensure component renders only on the client
   const [isClient, setIsClient] = useState(false);
@@ -30,32 +31,37 @@ export default function StudentDashboard() {
 
     const fetchData = async () => {
       try {
-        // ✅ Fetch faculty users directly using Firestore query
+        // Fetch faculty users
         const facultyQuery = query(collection(db, "users"), where("role", "==", "faculty"));
         const facultySnapshot = await getDocs(facultyQuery);
         
         const facultyList = facultySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setFaculties(facultyList);
 
-        // ✅ Extract unique domains
+        // Extract unique domains
         const uniqueDomains = new Set();
         facultyList.forEach(faculty => {
           faculty.facultyDomains?.forEach(domain => uniqueDomains.add(domain));
         });
         setDomains([...uniqueDomains]);
 
-        // ✅ Fetch applied faculties (Fix: Using "facultyApplications" collection)
-        const applicationsSnapshot = await getDocs(collection(db, "facultyApplications"));
-        const appliedSet = new Set();
-        
-        applicationsSnapshot.docs.forEach(doc => {
-          const data = doc.data();
-          if (data.studentId === user.uid) {
-            appliedSet.add(data.facultyId);
-          }
-        });
-
-        setAppliedFaculties(appliedSet);
+        // Fetch applied faculties
+        const applicationsSnapshot = await getDocs(
+          query(collection(db, "facultyApplications"), where("studentId", "==", user.uid))
+        );
+        const appliedList = await Promise.all(
+          applicationsSnapshot.docs.map(async (appDoc) => {
+            const applicationData = { id: appDoc.id, ...appDoc.data() };
+            
+            // Fetch full faculty details
+            const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
+            return {
+              ...applicationData,
+              facultyDetails: facultyDoc.exists() ? facultyDoc.data() : null
+            };
+          })
+        );
+        setAppliedFaculties(appliedList);
       } catch (error) {
         console.error("Error fetching data:", error);
         toast.error("Failed to load faculty profiles.");
@@ -69,21 +75,17 @@ export default function StudentDashboard() {
 
   if (!isClient) return null;
 
-  // ✅ Filter faculties based on search and domain selection
+  // Filter faculties based on search and domain selection
   const filteredFaculties = faculties.filter(faculty =>
     (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
-    (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+    (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    !appliedFaculties.some(app => app.facultyId === faculty.id)
   );
 
-  // ✅ Apply to Faculty (Fix: Using correct collection "facultyApplications")
+  // Apply to Faculty
   const handleApply = async (faculty) => {
     if (!user) {
       toast.error("You must be logged in to apply.");
-      return;
-    }
-
-    if (appliedFaculties.has(faculty.id)) {
-      toast.error("You have already applied to this faculty.");
       return;
     }
 
@@ -98,12 +100,43 @@ export default function StudentDashboard() {
         appliedAt: new Date(),
       });
 
-      setAppliedFaculties(prev => new Set([...prev, faculty.id]));
-      toast.success(`Application sent to ${faculty.name}`);
+      // Refetch applied faculties to update the list
+      const applicationsSnapshot = await getDocs(
+        query(collection(db, "facultyApplications"), where("studentId", "==", user.uid))
+      );
+      const appliedList = await Promise.all(
+        applicationsSnapshot.docs.map(async (appDoc) => {
+          const applicationData = { id: appDoc.id, ...appDoc.data() };
+          
+          const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
+          return {
+            ...applicationData,
+            facultyDetails: facultyDoc.exists() ? facultyDoc.data() : null
+          };
+        })
+      );
+      setAppliedFaculties(appliedList);
 
+      toast.success(`Application sent to ${faculty.name}`);
     } catch (error) {
       console.error("Error applying:", error);
       toast.error("Failed to apply. Try again later.");
+    }
+  };
+
+  // Withdraw Application
+  const handleWithdraw = async (applicationId) => {
+    try {
+      await deleteDoc(doc(db, "facultyApplications", applicationId));
+      
+      // Update applied faculties list
+      const updatedAppliedFaculties = appliedFaculties.filter(app => app.id !== applicationId);
+      setAppliedFaculties(updatedAppliedFaculties);
+
+      toast.success("Application withdrawn successfully.");
+    } catch (error) {
+      console.error("Error withdrawing application:", error);
+      toast.error("Failed to withdraw application.");
     }
   };
 
@@ -145,31 +178,73 @@ export default function StudentDashboard() {
         </Select>
       </div>
 
-      {/* Faculty List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          <p>Loading faculties...</p>
-        ) : filteredFaculties.length === 0 ? (
-          <p>No faculties found.</p>
-        ) : (
-          filteredFaculties.map(faculty => (
-            <Card key={faculty.id} className="p-4">
-              <CardHeader>
-                <CardTitle>{faculty.name || "Faculty"}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Domains: {faculty.facultyDomains?.join(", ") || "N/A"}</p>
-                <Button
-                  className="mt-4"
-                  disabled={appliedFaculties.has(faculty.id)}
-                  onClick={() => handleApply(faculty)}
-                >
-                  {appliedFaculties.has(faculty.id) ? "Applied" : "Apply"}
-                </Button>
-              </CardContent>
-            </Card>
-          ))
-        )}
+      {/* Applied Faculties Section - Now FULL WIDTH */}
+      {appliedFaculties.length > 0 && (
+        <div className="w-full">
+          <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {appliedFaculties.map(application => (
+              <Card key={application.id} className="p-4">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>
+                    {application.facultyDetails?.name || "Faculty"}
+                  </CardTitle>
+                  <Badge 
+                    variant={
+                      application.status === "pending" ? "secondary" :
+                      application.status === "Accepted" ? "success" :
+                      "destructive"
+                    }
+                  >
+                    {application.status}
+                  </Badge>
+                </CardHeader>
+                <CardContent>
+                  <p>Domains: {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}</p>
+                  <div className="flex justify-between items-center mt-4">
+                    <Button 
+                      variant="destructive" 
+                      size="sm" 
+                      onClick={() => handleWithdraw(application.id)}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Withdraw
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Available Faculties Section */}
+      <div className="w-full">
+        <h2 className="text-2xl font-semibold mb-4">Available Faculties</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {loading ? (
+            <p>Loading faculties...</p>
+          ) : filteredFaculties.length === 0 ? (
+            <p>No faculties available.</p>
+          ) : (
+            filteredFaculties.map(faculty => (
+              <Card key={faculty.id} className="p-4">
+                <CardHeader>
+                  <CardTitle>{faculty.name || "Faculty"}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>Domains: {faculty.facultyDomains?.join(", ") || "N/A"}</p>
+                  <Button 
+                    className="mt-4" 
+                    onClick={() => handleApply(faculty)}
+                  >
+                    Apply
+                  </Button>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

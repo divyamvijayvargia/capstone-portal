@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { db } from "../../../firebase";
-import { collection, getDocs, updateDoc, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, getDoc, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,59 +19,58 @@ export default function FacultyDashboard() {
   useEffect(() => {
     if (!user) return;
     const fetchApplications = async () => {
-      const applicationsSnapshot = await getDocs(collection(db, "facultyApplications"));
-      const facultyApps = applicationsSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(app => app.facultyId === user.uid);
-      setApplications(facultyApps);
+      try {
+        const applicationsQuery = query(
+          collection(db, "facultyApplications"), 
+          where("facultyId", "==", user.uid)
+        );
+        const applicationsSnapshot = await getDocs(applicationsQuery);
+        
+        const facultyApps = await Promise.all(
+          applicationsSnapshot.docs.map(async (appDoc) => {
+            const applicationData = { id: appDoc.id, ...appDoc.data() };
+            
+            // Fetch student details
+            const studentDoc = await getDoc(doc(db, "users", applicationData.studentId));
+            if (studentDoc.exists()) {
+              applicationData.studentDetails = studentDoc.data();
+            }
+            
+            return applicationData;
+          })
+        );
+
+        setApplications(facultyApps);
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+        toast.error("Failed to load applications.");
+      }
     };
     fetchApplications();
   }, [user]);
 
-  useEffect(() => {
-    const fetchStudentDetails = async () => {
-      const details = { ...studentDetails };
-      for (const app of applications) {
-        if (!details[app.studentId]) {
-          const docSnap = await getDoc(doc(db, "users", app.studentId));
-          if (docSnap.exists()) {
-            details[app.studentId] = docSnap.data();
-          }
-        }
-      }
-      setStudentDetails(details);
-    };
-    if (applications.length > 0) {
-      fetchStudentDetails();
-    }
-  }, [applications]);
-
-  const acceptApplication = async (appId) => {
+  const handleApplicationAction = async (appId, status) => {
     try {
-      await updateDoc(doc(db, "facultyApplications", appId), { status: "Accepted" });
-      setApplications(applications.map(app => app.id === appId ? { ...app, status: "Accepted" } : app));
-      toast.success("Application accepted successfully!");
+      await updateDoc(doc(db, "facultyApplications", appId), { status });
+      
+      setApplications(applications.map(app => 
+        app.id === appId ? { ...app, status } : app
+      ));
+
+      toast.success(`Application ${status.toLowerCase()} successfully!`);
     } catch (error) {
-      toast.error("Error accepting application.");
+      console.error(`Error ${status.toLowerCase()}ing application:`, error);
+      toast.error(`Failed to ${status.toLowerCase()} application.`);
     }
   };
 
-  const rejectApplication = async (appId) => {
-    try {
-      await updateDoc(doc(db, "facultyApplications", appId), { status: "Rejected" });
-      setApplications(applications.map(app => app.id === appId ? { ...app, status: "Rejected" } : app));
-      toast.success("Application rejected successfully!");
-    } catch (error) {
-      toast.error("Error rejecting application.");
-    }
-  };
-
-  const pendingApps = applications.filter(app => app.status === "Pending");
+  const pendingApps = applications.filter(app => app.status === "pending");
   const acceptedApps = applications.filter(app => app.status === "Accepted");
   const rejectedApps = applications.filter(app => app.status === "Rejected");
 
   const ApplicationCard = ({ application, showActions = false }) => {
-    const student = studentDetails[application.studentId];
+    const student = application.studentDetails;
+    
     return (
       <Card className="mb-4">
         <CardHeader>
@@ -83,7 +82,7 @@ export default function FacultyDashboard() {
               </CardTitle>
             </div>
             <Badge variant={
-              application.status === "Pending" ? "warning" :
+              application.status === "pending" ? "warning" :
               application.status === "Accepted" ? "success" :
               "destructive"
             }>
@@ -109,17 +108,13 @@ export default function FacultyDashboard() {
               <p className="text-sm text-muted-foreground">{student.bio}</p>
             </div>
           )}
-          <div className="space-y-2">
-            <div className="text-sm font-medium">Reason for Application:</div>
-            <p className="text-sm text-muted-foreground">{application.reason}</p>
-          </div>
           
           {showActions && (
             <div className="flex space-x-2 pt-2">
               <Button
                 className="flex-1"
                 variant="default"
-                onClick={() => acceptApplication(application.id)}
+                onClick={() => handleApplicationAction(application.id, "Accepted")}
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Accept
@@ -127,7 +122,7 @@ export default function FacultyDashboard() {
               <Button
                 className="flex-1"
                 variant="destructive"
-                onClick={() => rejectApplication(application.id)}
+                onClick={() => handleApplicationAction(application.id, "Rejected")}
               >
                 <XCircle className="mr-2 h-4 w-4" />
                 Reject
@@ -180,7 +175,11 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               pendingApps.map(app => (
-                <ApplicationCard key={app.id} application={app} showActions />
+                <ApplicationCard 
+                  key={app.id} 
+                  application={app} 
+                  showActions={true} 
+                />
               ))
             )}
           </TabsContent>
@@ -194,7 +193,10 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               acceptedApps.map(app => (
-                <ApplicationCard key={app.id} application={app} />
+                <ApplicationCard 
+                  key={app.id} 
+                  application={app} 
+                />
               ))
             )}
           </TabsContent>
@@ -208,7 +210,10 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               rejectedApps.map(app => (
-                <ApplicationCard key={app.id} application={app} />
+                <ApplicationCard 
+                  key={app.id} 
+                  application={app} 
+                />
               ))
             )}
           </TabsContent>
