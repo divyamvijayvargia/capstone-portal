@@ -197,32 +197,45 @@ export default function ProfileSetup() {
               <div className="space-y-2">
                 <Label>Departments</Label>
                 <ScrollArea className="h-[100px] border rounded-md p-4 flex flex-wrap gap-2">
-                  {departments.map((dept) => (
-                    <Badge
-                      key={dept}
-                      onClick={() => handleDepartmentToggle(dept)}
-                      className={`cursor-pointer ${selectedDepartments.includes(dept) ? "bg-primary text-white" : "bg-gray-200 text-black"
-                        }`}
-                    >
-                      {dept}
-                    </Badge>
-                  ))}
+                  {departments.length > 0 ? (
+                    departments.map((dept) => (
+                      <Badge
+                        key={dept}
+                        onClick={() => handleDepartmentToggle(dept)}
+                        className={`cursor-pointer ${selectedDepartments.includes(dept)
+                            ? "bg-primary text-white"
+                            : "bg-gray-200 text-black"
+                          }`}
+                      >
+                        {dept}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No departments found.</p>
+                  )}
                 </ScrollArea>
               </div>
 
+              {/* Domains Selection */}
               <div className="space-y-2">
                 <Label>Domains</Label>
                 <ScrollArea className="h-[100px] border rounded-md p-4 flex flex-wrap gap-2">
-                  {domains.map((domain) => (
-                    <Badge
-                      key={domain}
-                      onClick={() => handleDomainToggle(domain)}
-                      className={`cursor-pointer ${selectedDomains.includes(domain) ? "bg-primary text-white" : "bg-gray-200 text-black"
-                        }`}
-                    >
-                      {domain}
-                    </Badge>
-                  ))}
+                  {domains.length > 0 ? (
+                    domains.map((domain) => (
+                      <Badge
+                        key={domain}
+                        onClick={() => handleDomainToggle(domain)}
+                        className={`cursor-pointer ${selectedDomains.includes(domain)
+                            ? "bg-primary text-white"
+                            : "bg-gray-200 text-black"
+                          }`}
+                      >
+                        {domain}
+                      </Badge>
+                    ))
+                  ) : (
+                    <p className="text-gray-500">No domains found.</p>
+                  )}
                 </ScrollArea>
               </div>
 
