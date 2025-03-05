@@ -39,7 +39,7 @@ export default function ProfileSetup() {
   const [bio, setBio] = useState("");
   const [cgpa, setCgpa] = useState("");
   const [cgpaError, setCgpaError] = useState("");
-  const [emailError, setEmailError] = useState("");
+  // const [emailError, setEmailError] = useState("");   First line for email verification
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -52,19 +52,19 @@ export default function ProfileSetup() {
     fetchLists();
 
     // Check if user's email is a VIT email
-    if (user && user.email) {
-      validateEmail(user.email);
-    }
-  }, [user]);
+  //   if (user && user.email) {   Second line for email verification
+  //     validateEmail(user.email);
+  //   }
+  // }, [user]);
 
-  const validateEmail = (email) => {
-    if (!email.endsWith("@vitstudent.ac.in")) {
-      setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
-      return false;
-    }
-    setEmailError("");
-    return true;
-  };
+  // const validateEmail = (email) => { Third line for email verification
+  //   if (!email.endsWith("@vitstudent.ac.in")) {
+  //     setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
+  //     return false;
+  //   }
+  //   setEmailError("");
+  //   return true;
+  // };
 
   const validateRegistrationNumber = (regNo) => {
     if (regNo.length !== 9) {
@@ -97,12 +97,12 @@ export default function ProfileSetup() {
     validateCgpa(value);
   };
 
-  const handleSubmit = async () => {
-    // Check email validation first
-    if (emailError) {
-      toast.error(emailError);
-      return;
-    }
+  // const handleSubmit = async () => { Fourth line for email verification
+  //   // Check email validation first
+  //   if (emailError) {
+  //     toast.error(emailError);
+  //     return;
+  //   }
 
     // Validate all required fields based on role
     if (!role || !name) {
@@ -170,24 +170,24 @@ export default function ProfileSetup() {
   };
 
   // If there's an email error, show it prominently
-  if (emailError) {
-    return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
-            <CardDescription>
-              Access Denied
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-500 mb-4">{emailError}</p>
-            <p>Please sign in with your VIT email address to continue.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // if (emailError) { Fifth line for email verification
+  //   return (
+  //     <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+  //       <Card className="max-w-md w-full">
+  //         <CardHeader>
+  //           <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
+  //           <CardDescription>
+  //             Access Denied
+  //           </CardDescription>
+  //         </CardHeader>
+  //         <CardContent>
+  //           <p className="text-red-500 mb-4">{emailError}</p>
+  //           <p>Please sign in with your VIT email address to continue.</p>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -278,7 +278,7 @@ export default function ProfileSetup() {
                 <Input
                   id="cgpa"
                   type="number"
-                  step="0.01"
+                  step="0.10"
                   min="0"
                   max="10"
                   placeholder="Enter your CGPA (0-10)"
