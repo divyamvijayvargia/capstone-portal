@@ -203,8 +203,8 @@ export default function ProfileSetup() {
                         key={dept}
                         onClick={() => handleDepartmentToggle(dept)}
                         className={`cursor-pointer ${selectedDepartments.includes(dept)
-                            ? "bg-primary text-white"
-                            : "bg-gray-200 text-black"
+                          ? "bg-primary text-white"
+                          : "bg-gray-200 text-black"
                           }`}
                       >
                         {dept}
@@ -226,8 +226,8 @@ export default function ProfileSetup() {
                         key={domain}
                         onClick={() => handleDomainToggle(domain)}
                         className={`cursor-pointer ${selectedDomains.includes(domain)
-                            ? "bg-primary text-white"
-                            : "bg-gray-200 text-black"
+                          ? "bg-primary text-white"
+                          : "bg-gray-200 text-black"
                           }`}
                       >
                         {domain}

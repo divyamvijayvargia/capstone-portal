@@ -34,7 +34,7 @@ export default function StudentDashboard() {
         // Fetch faculty users
         const facultyQuery = query(collection(db, "users"), where("role", "==", "faculty"));
         const facultySnapshot = await getDocs(facultyQuery);
-        
+
         const facultyList = facultySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setFaculties(facultyList);
 
@@ -52,7 +52,7 @@ export default function StudentDashboard() {
         const appliedList = await Promise.all(
           applicationsSnapshot.docs.map(async (appDoc) => {
             const applicationData = { id: appDoc.id, ...appDoc.data() };
-            
+
             // Fetch full faculty details
             const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
             return {
@@ -107,7 +107,7 @@ export default function StudentDashboard() {
       const appliedList = await Promise.all(
         applicationsSnapshot.docs.map(async (appDoc) => {
           const applicationData = { id: appDoc.id, ...appDoc.data() };
-          
+
           const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
           return {
             ...applicationData,
@@ -128,7 +128,7 @@ export default function StudentDashboard() {
   const handleWithdraw = async (applicationId) => {
     try {
       await deleteDoc(doc(db, "facultyApplications", applicationId));
-      
+
       // Update applied faculties list
       const updatedAppliedFaculties = appliedFaculties.filter(app => app.id !== applicationId);
       setAppliedFaculties(updatedAppliedFaculties);
@@ -144,7 +144,7 @@ export default function StudentDashboard() {
     <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
-      <h1 className="text-3xl font-bold">Hello, {user?.displayName || user?.email?.split('@')[0] || 'Student'}</h1>
+        <h1 className="text-3xl font-bold">Hello, {user?.displayName || user?.email?.split('@')[0] || 'Student'}</h1>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/student/profile")} className="gap-2">
             <Settings className="h-4 w-4" />
@@ -189,11 +189,11 @@ export default function StudentDashboard() {
                   <CardTitle>
                     {application.facultyDetails?.name || "Faculty"}
                   </CardTitle>
-                  <Badge 
+                  <Badge
                     variant={
                       application.status === "pending" ? "secondary" :
-                      application.status === "Accepted" ? "success" :
-                      "destructive"
+                        application.status === "Accepted" ? "success" :
+                          "destructive"
                     }
                   >
                     {application.status}
@@ -202,9 +202,9 @@ export default function StudentDashboard() {
                 <CardContent>
                   <p>Domains: {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}</p>
                   <div className="flex justify-between items-center mt-4">
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
+                    <Button
+                      variant="destructive"
+                      size="sm"
                       onClick={() => handleWithdraw(application.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
@@ -234,8 +234,8 @@ export default function StudentDashboard() {
                 </CardHeader>
                 <CardContent>
                   <p>Domains: {faculty.facultyDomains?.join(", ") || "N/A"}</p>
-                  <Button 
-                    className="mt-4" 
+                  <Button
+                    className="mt-4"
                     onClick={() => handleApply(faculty)}
                   >
                     Apply

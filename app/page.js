@@ -24,7 +24,7 @@ export default function Landing() {
               Bridge the gap between students and faculty. Find the perfect project match and bring your ideas to life.
             </p>
             <Button onClick={login} size="lg" className="mt-8">
-              Get Started with Google <ChevronRight className="ml-2 h-4 w-4" />
+              Get Started with Google(Use VIT mail id)<ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
         </div>

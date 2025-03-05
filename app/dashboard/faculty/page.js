@@ -21,21 +21,21 @@ export default function FacultyDashboard() {
     const fetchApplications = async () => {
       try {
         const applicationsQuery = query(
-          collection(db, "facultyApplications"), 
+          collection(db, "facultyApplications"),
           where("facultyId", "==", user.uid)
         );
         const applicationsSnapshot = await getDocs(applicationsQuery);
-        
+
         const facultyApps = await Promise.all(
           applicationsSnapshot.docs.map(async (appDoc) => {
             const applicationData = { id: appDoc.id, ...appDoc.data() };
-            
+
             // Fetch student details
             const studentDoc = await getDoc(doc(db, "users", applicationData.studentId));
             if (studentDoc.exists()) {
               applicationData.studentDetails = studentDoc.data();
             }
-            
+
             return applicationData;
           })
         );
@@ -52,8 +52,8 @@ export default function FacultyDashboard() {
   const handleApplicationAction = async (appId, status) => {
     try {
       await updateDoc(doc(db, "facultyApplications", appId), { status });
-      
-      setApplications(applications.map(app => 
+
+      setApplications(applications.map(app =>
         app.id === appId ? { ...app, status } : app
       ));
 
@@ -70,7 +70,7 @@ export default function FacultyDashboard() {
 
   const ApplicationCard = ({ application, showActions = false }) => {
     const student = application.studentDetails;
-    
+
     return (
       <Card className="mb-4">
         <CardHeader>
@@ -83,8 +83,8 @@ export default function FacultyDashboard() {
             </div>
             <Badge variant={
               application.status === "pending" ? "warning" :
-              application.status === "Accepted" ? "success" :
-              "destructive"
+                application.status === "Accepted" ? "success" :
+                  "destructive"
             }>
               {application.status}
             </Badge>
@@ -108,7 +108,7 @@ export default function FacultyDashboard() {
               <p className="text-sm text-muted-foreground">{student.bio}</p>
             </div>
           )}
-          
+
           {showActions && (
             <div className="flex space-x-2 pt-2">
               <Button
@@ -138,9 +138,9 @@ export default function FacultyDashboard() {
     <div className="min-h-screen bg-background p-6">
       <div className="flex justify-between items-center mb-6">
         <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">
-      Hello, {user?.displayName || user?.email?.split('@')[0] || 'Faculty'}
-    </h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Hello, {user?.displayName || user?.email?.split('@')[0] || 'Faculty'}
+          </h1>
           <p className="text-muted-foreground">
             You can accept or reject an application based on their details.
           </p>
@@ -177,10 +177,10 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               pendingApps.map(app => (
-                <ApplicationCard 
-                  key={app.id} 
-                  application={app} 
-                  showActions={true} 
+                <ApplicationCard
+                  key={app.id}
+                  application={app}
+                  showActions={true}
                 />
               ))
             )}
@@ -195,9 +195,9 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               acceptedApps.map(app => (
-                <ApplicationCard 
-                  key={app.id} 
-                  application={app} 
+                <ApplicationCard
+                  key={app.id}
+                  application={app}
                 />
               ))
             )}
@@ -212,9 +212,9 @@ export default function FacultyDashboard() {
               </Card>
             ) : (
               rejectedApps.map(app => (
-                <ApplicationCard 
-                  key={app.id} 
-                  application={app} 
+                <ApplicationCard
+                  key={app.id}
+                  application={app}
                 />
               ))
             )}
