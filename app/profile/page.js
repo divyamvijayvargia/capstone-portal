@@ -226,11 +226,6 @@ export default function ProfileSetup() {
                 </ScrollArea>
               </div>
 
-
-
-
-
-
             </div>
           )}
 

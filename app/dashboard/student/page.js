@@ -1,9 +1,9 @@
-'use client';
+"use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import { db } from "../../../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,15 +19,18 @@ export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("all");
   const [domains, setDomains] = useState([]);
+  const [appliedFaculties, setAppliedFaculties] = useState(new Set());
 
-  // Prevent SSR mismatches by ensuring the component renders only on the client
+  // Ensure component renders only on the client
   const [isClient, setIsClient] = useState(false);
   useEffect(() => setIsClient(true), []);
 
   useEffect(() => {
     if (!user || !isClient) return;
-    const fetchFaculties = async () => {
+
+    const fetchData = async () => {
       try {
+        // Fetch faculty users
         const facultySnapshot = await getDocs(collection(db, "users"));
         const facultyList = facultySnapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -41,24 +44,68 @@ export default function StudentDashboard() {
           faculty.facultyDomains?.forEach(domain => uniqueDomains.add(domain));
         });
         setDomains([...uniqueDomains]);
+
+        // Fetch applied faculties for the current user only
+        const applicationsSnapshot = await getDocs(collection(db, "applications"));
+        const appliedSet = new Set();
+        applicationsSnapshot.docs.forEach(doc => {
+          const data = doc.data();
+          if (data.studentId === user.uid) {
+            appliedSet.add(data.facultyId);
+          }
+        });
+        setAppliedFaculties(appliedSet);
       } catch (error) {
-        console.error("Error fetching faculties:", error);
+        console.error("Error fetching data:", error);
         toast.error("Failed to load faculty profiles.");
       } finally {
         setLoading(false);
       }
     };
-    fetchFaculties();
+
+    fetchData();
   }, [user, isClient]);
 
-  // Ensure rendering happens only on the client
   if (!isClient) return null;
 
   // Filter faculties based on search and domain selection
-  const filteredFaculties = faculties.filter(faculty => 
+  const filteredFaculties = faculties.filter(faculty =>
     (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
     (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Apply to Faculty
+  const handleApply = async (faculty) => {
+    if (!user) {
+      toast.error("You must be logged in to apply.");
+      return;
+    }
+
+    if (appliedFaculties.has(faculty.id)) {
+      toast.error("You have already applied to this faculty.");
+      return;
+    }
+
+    try {
+      const applicationRef = doc(db, "applications", `${user.uid}_${faculty.id}`);
+
+      await setDoc(applicationRef, {
+        studentId: user.uid,
+        facultyId: faculty.id,
+        facultyName: faculty.name,
+        studentName: user.displayName || "Student",
+        status: "pending",
+        appliedAt: new Date(),
+      });
+
+      setAppliedFaculties(prev => new Set([...prev, faculty.id]));
+      toast.success(`Application sent to ${faculty.name}`);
+
+    } catch (error) {
+      console.error("Error applying:", error);
+      toast.error("Failed to apply. Try again later.");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
@@ -85,13 +132,13 @@ export default function StudentDashboard() {
           onChange={(e) => setSearchTerm(e.target.value)}
           className="md:w-1/2"
         />
-        <Select value={selectedDomain || "all"} onValueChange={setSelectedDomain}>
+        <Select value={selectedDomain} onValueChange={setSelectedDomain}>
           <SelectTrigger className="md:w-1/2">
             <SelectValue placeholder="Filter by domain" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Domains</SelectItem>
-            {domains.length > 0 && domains.map((domain, index) => (
+            {domains.map((domain, index) => (
               <SelectItem key={index} value={domain}>{domain}</SelectItem>
             ))}
           </SelectContent>
@@ -112,7 +159,13 @@ export default function StudentDashboard() {
               </CardHeader>
               <CardContent>
                 <p>Domains: {faculty.facultyDomains?.join(", ") || "N/A"}</p>
-                <Button className="mt-4" onClick={() => console.log("Apply to", faculty.id)}>Apply</Button>
+                <Button
+                  className="mt-4"
+                  disabled={appliedFaculties.has(faculty.id)}
+                  onClick={() => handleApply(faculty)}
+                >
+                  {appliedFaculties.has(faculty.id) ? "Applied" : "Apply"}
+                </Button>
               </CardContent>
             </Card>
           ))
