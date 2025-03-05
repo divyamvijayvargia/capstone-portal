@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthContext";
 import { db } from "../../../firebase";
-import { collection, getDocs, doc, setDoc } from "firebase/firestore";
+import { collection, getDocs, doc, setDoc, query, where } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,30 +30,31 @@ export default function StudentDashboard() {
 
     const fetchData = async () => {
       try {
-        // Fetch faculty users
-        const facultySnapshot = await getDocs(collection(db, "users"));
-        const facultyList = facultySnapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(user => user.role === "faculty");
-
+        // ✅ Fetch faculty users directly using Firestore query
+        const facultyQuery = query(collection(db, "users"), where("role", "==", "faculty"));
+        const facultySnapshot = await getDocs(facultyQuery);
+        
+        const facultyList = facultySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setFaculties(facultyList);
 
-        // Extract unique domains
+        // ✅ Extract unique domains
         const uniqueDomains = new Set();
         facultyList.forEach(faculty => {
           faculty.facultyDomains?.forEach(domain => uniqueDomains.add(domain));
         });
         setDomains([...uniqueDomains]);
 
-        // Fetch applied faculties for the current user only
-        const applicationsSnapshot = await getDocs(collection(db, "applications"));
+        // ✅ Fetch applied faculties (Fix: Using "facultyApplications" collection)
+        const applicationsSnapshot = await getDocs(collection(db, "facultyApplications"));
         const appliedSet = new Set();
+        
         applicationsSnapshot.docs.forEach(doc => {
           const data = doc.data();
           if (data.studentId === user.uid) {
             appliedSet.add(data.facultyId);
           }
         });
+
         setAppliedFaculties(appliedSet);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -68,13 +69,13 @@ export default function StudentDashboard() {
 
   if (!isClient) return null;
 
-  // Filter faculties based on search and domain selection
+  // ✅ Filter faculties based on search and domain selection
   const filteredFaculties = faculties.filter(faculty =>
     (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
     (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
-  // Apply to Faculty
+  // ✅ Apply to Faculty (Fix: Using correct collection "facultyApplications")
   const handleApply = async (faculty) => {
     if (!user) {
       toast.error("You must be logged in to apply.");
@@ -87,15 +88,7 @@ export default function StudentDashboard() {
     }
 
     try {
-      // Use "facultyApplications" instead of "applications"
       const applicationRef = doc(db, "facultyApplications", `${user.uid}_${faculty.id}`);
-      const applicationSnapshot = await getDoc(applicationRef);
-
-      if (applicationSnapshot.exists()) {
-        toast.error("You have already applied to this faculty.");
-        return;
-      }
-
       await setDoc(applicationRef, {
         studentId: user.uid,
         facultyId: faculty.id,
