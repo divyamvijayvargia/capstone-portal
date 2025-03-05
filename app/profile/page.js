@@ -210,6 +210,27 @@ export default function ProfileSetup() {
                 </ScrollArea>
               </div>
 
+              <div className="space-y-2">
+                <Label>Domains</Label>
+                <ScrollArea className="h-[100px] border rounded-md p-4 flex flex-wrap gap-2">
+                  {domains.map((domain) => (
+                    <Badge
+                      key={domain}
+                      onClick={() => handleDomainToggle(domain)}
+                      className={`cursor-pointer ${selectedDomains.includes(domain) ? "bg-primary text-white" : "bg-gray-200 text-black"
+                        }`}
+                    >
+                      {domain}
+                    </Badge>
+                  ))}
+                </ScrollArea>
+              </div>
+
+
+
+
+
+
             </div>
           )}
 
