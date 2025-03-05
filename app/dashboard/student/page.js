@@ -87,7 +87,14 @@ export default function StudentDashboard() {
     }
 
     try {
-      const applicationRef = doc(db, "applications", `${user.uid}_${faculty.id}`);
+      // Use "facultyApplications" instead of "applications"
+      const applicationRef = doc(db, "facultyApplications", `${user.uid}_${faculty.id}`);
+      const applicationSnapshot = await getDoc(applicationRef);
+
+      if (applicationSnapshot.exists()) {
+        toast.error("You have already applied to this faculty.");
+        return;
+      }
 
       await setDoc(applicationRef, {
         studentId: user.uid,
