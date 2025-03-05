@@ -27,16 +27,19 @@ export default function ProfileSetup() {
 
   // State Variables
   const [role, setRole] = useState("");
-  const [studentType, setStudentType] = useState(""); // ✅ Fix: Added missing state
+  const [studentType, setStudentType] = useState("");
   const [departments, setDepartments] = useState([]);
   const [domains, setDomains] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [selectedDomains, setSelectedDomains] = useState([]);
   const [name, setName] = useState("");
   const [registrationNumber, setRegistrationNumber] = useState("");
+  const [registrationError, setRegistrationError] = useState("");
   const [empId, setEmpId] = useState("");
   const [bio, setBio] = useState("");
   const [cgpa, setCgpa] = useState("");
+  const [cgpaError, setCgpaError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -47,31 +50,111 @@ export default function ProfileSetup() {
       setDomains(domainSnapshot.docs.map(doc => doc.data().name));
     };
     fetchLists();
-  }, []);
+
+    // Check if user's email is a VIT email
+    if (user && user.email) {
+      validateEmail(user.email);
+    }
+  }, [user]);
+
+  const validateEmail = (email) => {
+    if (!email.endsWith("@vitstudent.ac.in")) {
+      setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
+      return false;
+    }
+    setEmailError("");
+    return true;
+  };
+
+  const validateRegistrationNumber = (regNo) => {
+    if (regNo.length !== 9) {
+      setRegistrationError("Registration number must be exactly 9 characters");
+      return false;
+    }
+    setRegistrationError("");
+    return true;
+  };
+
+  const validateCgpa = (value) => {
+    const numValue = parseFloat(value);
+    if (isNaN(numValue) || numValue < 0 || numValue > 10) {
+      setCgpaError("CGPA must be a number between 0 and 10");
+      return false;
+    }
+    setCgpaError("");
+    return true;
+  };
+
+  const handleRegistrationChange = (e) => {
+    const value = e.target.value;
+    setRegistrationNumber(value);
+    validateRegistrationNumber(value);
+  };
+
+  const handleCgpaChange = (e) => {
+    const value = e.target.value;
+    setCgpa(value);
+    validateCgpa(value);
+  };
 
   const handleSubmit = async () => {
-    if (!role || !name ||
-      (role === "student" && (!registrationNumber || !bio || !cgpa || !studentType)) ||
-      (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0))) {
+    // Check email validation first
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
+    // Validate all required fields based on role
+    if (!role || !name) {
       toast.error("Please fill all required fields.");
       return;
     }
 
-    await setDoc(doc(db, "users", user.uid), {
-      uid: user.uid,
-      email: user.email,
-      role,
-      name,
-      registrationNumber: role === "student" ? registrationNumber : "",
-      studentType: role === "student" ? studentType : "",
-      empId: role === "faculty" ? empId : "",
-      bio: role === "student" ? bio : "",
-      cgpa: role === "student" ? cgpa : "",
-      facultyDepartment: role === "faculty" ? selectedDepartments : null,
-      facultyDomains: role === "faculty" ? selectedDomains : null,
-    });
+    if (role === "student") {
+      if (!registrationNumber || !bio || !cgpa || !studentType) {
+        toast.error("Please fill all required fields for student profile.");
+        return;
+      }
 
-    router.push(role === "student" ? "/dashboard/student" : "/dashboard/faculty");
+      // Validate registration number format
+      if (!validateRegistrationNumber(registrationNumber)) {
+        toast.error(registrationError);
+        return;
+      }
+
+      // Validate CGPA
+      if (!validateCgpa(cgpa)) {
+        toast.error(cgpaError);
+        return;
+      }
+    }
+
+    if (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0)) {
+      toast.error("Please fill all required fields for faculty profile.");
+      return;
+    }
+
+    // Save user profile to Firestore
+    try {
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        email: user.email,
+        role,
+        name,
+        registrationNumber: role === "student" ? registrationNumber : "",
+        studentType: role === "student" ? studentType : "",
+        empId: role === "faculty" ? empId : "",
+        bio: role === "student" ? bio : "",
+        cgpa: role === "student" ? cgpa : "",
+        facultyDepartment: role === "faculty" ? selectedDepartments : null,
+        facultyDomains: role === "faculty" ? selectedDomains : null,
+      });
+
+      toast.success("Profile saved successfully!");
+      router.push(role === "student" ? "/dashboard/student" : "/dashboard/faculty");
+    } catch (error) {
+      toast.error("Error saving profile: " + error.message);
+    }
   };
 
   const handleDomainToggle = (domain) => {
@@ -85,6 +168,26 @@ export default function ProfileSetup() {
       prev.includes(department) ? prev.filter(d => d !== department) : [...prev, department]
     );
   };
+
+  // If there's an email error, show it prominently
+  if (emailError) {
+    return (
+      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
+            <CardDescription>
+              Access Denied
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-red-500 mb-4">{emailError}</p>
+            <p>Please sign in with your VIT email address to continue.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -135,10 +238,14 @@ export default function ProfileSetup() {
                 <Label htmlFor="regNo">Registration Number</Label>
                 <Input
                   id="regNo"
-                  placeholder="Enter your registration number"
+                  placeholder="Enter your registration number (9 characters)"
                   value={registrationNumber}
-                  onChange={(e) => setRegistrationNumber(e.target.value)}
+                  onChange={handleRegistrationChange}
+                  maxLength={9}
                 />
+                {registrationError && (
+                  <p className="text-sm text-red-500 mt-1">{registrationError}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -174,10 +281,13 @@ export default function ProfileSetup() {
                   step="0.01"
                   min="0"
                   max="10"
-                  placeholder="Enter your CGPA"
+                  placeholder="Enter your CGPA (0-10)"
                   value={cgpa}
-                  onChange={(e) => setCgpa(e.target.value)}
+                  onChange={handleCgpaChange}
                 />
+                {cgpaError && (
+                  <p className="text-sm text-red-500 mt-1">{cgpaError}</p>
+                )}
               </div>
             </div>
           )}
@@ -216,7 +326,6 @@ export default function ProfileSetup() {
                 </ScrollArea>
               </div>
 
-              {/* Domains Selection */}
               <div className="space-y-2">
                 <Label>Domains</Label>
                 <ScrollArea className="h-[100px] border rounded-md p-4 flex flex-wrap gap-2">
@@ -238,7 +347,6 @@ export default function ProfileSetup() {
                   )}
                 </ScrollArea>
               </div>
-
             </div>
           )}
 
