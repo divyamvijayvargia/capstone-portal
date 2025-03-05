@@ -50,9 +50,9 @@ export default function ProfileSetup() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!role || !name || 
-        (role === "student" && (!registrationNumber || !bio || !cgpa || !studentType)) ||
-        (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0))) {
+    if (!role || !name ||
+      (role === "student" && (!registrationNumber || !bio || !cgpa || !studentType)) ||
+      (role === "faculty" && (!empId || selectedDepartments.length === 0 || selectedDomains.length === 0))) {
       toast.error("Please fill all required fields.");
       return;
     }
@@ -196,14 +196,20 @@ export default function ProfileSetup() {
 
               <div className="space-y-2">
                 <Label>Departments</Label>
-                <ScrollArea className="h-[100px] border rounded-md p-4">
-                  {departments.map(dept => (
-                    <Badge key={dept} onClick={() => handleDepartmentToggle(dept)}>
+                <ScrollArea className="h-[100px] border rounded-md p-4 flex flex-wrap gap-2">
+                  {departments.map((dept) => (
+                    <Badge
+                      key={dept}
+                      onClick={() => handleDepartmentToggle(dept)}
+                      className={`cursor-pointer ${selectedDepartments.includes(dept) ? "bg-primary text-white" : "bg-gray-200 text-black"
+                        }`}
+                    >
                       {dept}
                     </Badge>
                   ))}
                 </ScrollArea>
               </div>
+
             </div>
           )}
 
