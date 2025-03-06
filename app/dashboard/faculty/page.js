@@ -19,7 +19,7 @@ export default function FacultyDashboard() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     // Fetch faculty name from user document
     const fetchFacultyName = async () => {
       try {
@@ -35,7 +35,7 @@ export default function FacultyDashboard() {
         setFacultyName(user.displayName || user.email);
       }
     };
-    
+
     const fetchApplications = async () => {
       try {
         const applicationsQuery = query(
@@ -64,7 +64,7 @@ export default function FacultyDashboard() {
         toast.error("Failed to load applications.");
       }
     };
-    
+
     fetchFacultyName();
     fetchApplications();
   }, [user]);

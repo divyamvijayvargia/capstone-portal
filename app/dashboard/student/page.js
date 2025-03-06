@@ -149,7 +149,7 @@ export default function StudentDashboard() {
 
   // Helper function to determine badge styling based on status
   const getBadgeVariant = (status) => {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'accepted':
         return "success";
       case 'rejected':

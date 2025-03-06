@@ -39,7 +39,7 @@ export default function ProfileSetup() {
   const [bio, setBio] = useState("");
   const [cgpa, setCgpa] = useState("");
   const [cgpaError, setCgpaError] = useState("");
-  const [emailError, setEmailError] = useState("");
+  // const [emailError, setEmailError] = useState(""); First line of email verification
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -52,19 +52,19 @@ export default function ProfileSetup() {
     fetchLists();
 
     // Check if user's email is a VIT email
-    if (user && user.email) {
-      validateEmail(user.email);
-    }
+    // if (user && user.email) {  Second line of email verification
+    //   validateEmail(user.email);
+    // }
   }, [user]);
 
-  const validateEmail = (email) => {
-    if (!email.endsWith("@vitstudent.ac.in")) {
-      setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
-      return false;
-    }
-    setEmailError("");
-    return true;
-  };
+  // const validateEmail = (email) => { Third line of email verification
+  //   if (!email.endsWith("@vitstudent.ac.in")) {
+  //     setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
+  //     return false;
+  //   }
+  //   setEmailError("");
+  //   return true;
+  // };
 
   const validateRegistrationNumber = (regNo) => {
     if (regNo.length !== 9) {
@@ -99,10 +99,10 @@ export default function ProfileSetup() {
 
   const handleSubmit = async () => {
     // Check email validation first
-    if (emailError) {
-      toast.error(emailError);
-      return;
-    }
+    // if (emailError) { Fourth line of email verification
+    //   toast.error(emailError);
+    //   return;
+    // }
 
     // Validate all required fields based on role
     if (!role || !name) {
@@ -170,24 +170,24 @@ export default function ProfileSetup() {
   };
 
   // If there's an email error, show it prominently
-  if (emailError) {
-    return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
-            <CardDescription>
-              Access Denied
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-red-500 mb-4">{emailError}</p>
-            <p>Please sign in with your VIT email address to continue.</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // if (emailError) { Fifth line of email verification
+  //   return (
+  //     <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+  //       <Card className="max-w-md w-full">
+  //         <CardHeader>
+  //           <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
+  //           <CardDescription>
+  //             Access Denied
+  //           </CardDescription>
+  //         </CardHeader>
+  //         <CardContent>
+  //           <p className="text-red-500 mb-4">{emailError}</p>
+  //           <p>Please sign in with your VIT email address to continue.</p>
+  //         </CardContent>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-background p-6">
