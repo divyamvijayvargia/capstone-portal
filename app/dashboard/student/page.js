@@ -21,6 +21,7 @@ export default function StudentDashboard() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("all");
   const [domains, setDomains] = useState([]);
+  const [userData, setUserData] = useState(null);
 
   // Ensure component renders only on the client
   const [isClient, setIsClient] = useState(false);
@@ -31,6 +32,12 @@ export default function StudentDashboard() {
 
     const fetchData = async () => {
       try {
+        // Fetch current user data
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          setUserData(userDoc.data());
+        }
+
         // Fetch faculty users
         const facultyQuery = query(collection(db, "users"), where("role", "==", "faculty"));
         const facultySnapshot = await getDocs(facultyQuery);
@@ -95,7 +102,7 @@ export default function StudentDashboard() {
         studentId: user.uid,
         facultyId: faculty.id,
         facultyName: faculty.name,
-        studentName: user.displayName || "Student",
+        studentName: userData?.name || "Student", // Use the user's actual name
         status: "pending",
         appliedAt: new Date(),
       });
@@ -140,11 +147,23 @@ export default function StudentDashboard() {
     }
   };
 
+  // Helper function to determine badge styling based on status
+  const getBadgeVariant = (status) => {
+    switch(status.toLowerCase()) {
+      case 'accepted':
+        return "success";
+      case 'rejected':
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Hello, Student</h1>
+        <h1 className="text-3xl font-bold">Hello, {userData?.name || "Student"}</h1>
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => router.push("/dashboard/student/profile")} className="gap-2">
             <Settings className="h-4 w-4" />
@@ -189,13 +208,7 @@ export default function StudentDashboard() {
                   <CardTitle>
                     {application.facultyDetails?.name || "Faculty"}
                   </CardTitle>
-                  <Badge
-                    variant={
-                      application.status === "pending" ? "secondary" :
-                        application.status === "Accepted" ? "success" :
-                          "destructive"
-                    }
-                  >
+                  <Badge variant={getBadgeVariant(application.status)}>
                     {application.status}
                   </Badge>
                 </CardHeader>

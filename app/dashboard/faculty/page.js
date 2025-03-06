@@ -15,9 +15,27 @@ export default function FacultyDashboard() {
   const { user, logout } = useAuth();
   const [applications, setApplications] = useState([]);
   const [studentDetails, setStudentDetails] = useState({});
+  const [facultyName, setFacultyName] = useState("");
 
   useEffect(() => {
     if (!user) return;
+    
+    // Fetch faculty name from user document
+    const fetchFacultyName = async () => {
+      try {
+        const facultyDoc = await getDoc(doc(db, "users", user.uid));
+        if (facultyDoc.exists()) {
+          const facultyData = facultyDoc.data();
+          setFacultyName(facultyData.name || user.displayName || user.email);
+        } else {
+          setFacultyName(user.displayName || user.email);
+        }
+      } catch (error) {
+        console.error("Error fetching faculty details:", error);
+        setFacultyName(user.displayName || user.email);
+      }
+    };
+    
     const fetchApplications = async () => {
       try {
         const applicationsQuery = query(
@@ -46,6 +64,8 @@ export default function FacultyDashboard() {
         toast.error("Failed to load applications.");
       }
     };
+    
+    fetchFacultyName();
     fetchApplications();
   }, [user]);
 
@@ -139,7 +159,7 @@ export default function FacultyDashboard() {
       <div className="flex justify-between items-center mb-6">
         <div className="space-y-1">
           <h1 className="text-3xl font-bold tracking-tight">
-            Hello, Faculty</h1>
+            Hello, {facultyName || "Faculty"}</h1>
           <p className="text-muted-foreground">
             You can accept or reject an application based on their details.
           </p>
