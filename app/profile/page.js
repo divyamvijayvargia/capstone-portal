@@ -39,6 +39,9 @@ export default function ProfileSetup() {
   const [bio, setBio] = useState("");
   const [cgpa, setCgpa] = useState("");
   const [cgpaError, setCgpaError] = useState("");
+  const [ugLimit, setUgLimit] = useState("");
+  const [pgLimit, setPgLimit] = useState("");
+  const [mastersLimit, setMastersLimit] = useState("");
   // const [emailError, setEmailError] = useState(""); First line of email verification
 
   useEffect(() => {
@@ -148,6 +151,9 @@ export default function ProfileSetup() {
         cgpa: role === "student" ? cgpa : "",
         facultyDepartment: role === "faculty" ? selectedDepartments : null,
         facultyDomains: role === "faculty" ? selectedDomains : null,
+        ugLimit: role === "faculty" ? ugLimit : "",
+        pgLimit: role === "faculty" ? pgLimit : "",
+        mastersLimit: role === "faculty" ? mastersLimit : "",
       });
 
       toast.success("Profile saved successfully!");
@@ -302,6 +308,45 @@ export default function ProfileSetup() {
                   value={empId}
                   onChange={(e) => setEmpId(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-4">
+                <Label>Category-wise Student Intake Limits</Label>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ugLimit">Undergraduate (UG) Limit</Label>
+                    <Input
+                      id="ugLimit"
+                      type="number"
+                      min="0"
+                      placeholder="Enter UG student limit"
+                      value={ugLimit}
+                      onChange={(e) => setUgLimit(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pgLimit">Postgraduate (PG) Limit</Label>
+                    <Input
+                      id="pgLimit"
+                      type="number"
+                      min="0"
+                      placeholder="Enter PG student limit"
+                      value={pgLimit}
+                      onChange={(e) => setPgLimit(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="mastersLimit">Master's Limit</Label>
+                    <Input
+                      id="mastersLimit"
+                      type="number"
+                      min="0"
+                      placeholder="Enter Master's student limit"
+                      value={mastersLimit}
+                      onChange={(e) => setMastersLimit(e.target.value)}
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-2">

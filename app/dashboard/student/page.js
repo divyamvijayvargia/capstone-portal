@@ -22,6 +22,8 @@ export default function StudentDashboard() {
   const [selectedDomain, setSelectedDomain] = useState("all");
   const [domains, setDomains] = useState([]);
   const [userData, setUserData] = useState(null);
+  const [maxApplications] = useState(5); // Maximum allowed applications
+  const [facultyLimits, setFacultyLimits] = useState({});
 
   // Ensure component renders only on the client
   const [isClient, setIsClient] = useState(false);
@@ -38,11 +40,30 @@ export default function StudentDashboard() {
           setUserData(userDoc.data());
         }
 
-        // Fetch faculty users
+        // Fetch faculty users and their accepted applications count
         const facultyQuery = query(collection(db, "users"), where("role", "==", "faculty"));
         const facultySnapshot = await getDocs(facultyQuery);
-
         const facultyList = facultySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Fetch all faculty applications to count accepted students
+        const allApplicationsQuery = query(collection(db, "facultyApplications"), where("status", "==", "Accepted"));
+        const allApplicationsSnapshot = await getDocs(allApplicationsQuery);
+        const acceptedApplications = allApplicationsSnapshot.docs.map(doc => doc.data());
+
+        // Calculate accepted counts for each faculty
+        const facultyAcceptedCounts = {};
+        acceptedApplications.forEach(app => {
+          if (!facultyAcceptedCounts[app.facultyId]) {
+            facultyAcceptedCounts[app.facultyId] = { ug: 0, pg: 0, masters: 0 };
+          }
+          // Get student type from the application or fetch it if needed
+          const studentType = app.studentType?.toLowerCase() || "unknown";
+          if (studentType in facultyAcceptedCounts[app.facultyId]) {
+            facultyAcceptedCounts[app.facultyId][studentType]++;
+          }
+        });
+
+        setFacultyLimits(facultyAcceptedCounts);
         setFaculties(facultyList);
 
         // Extract unique domains
@@ -83,16 +104,33 @@ export default function StudentDashboard() {
   if (!isClient) return null;
 
   // Filter faculties based on search and domain selection
-  const filteredFaculties = faculties.filter(faculty =>
-    (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
-    (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    !appliedFaculties.some(app => app.facultyId === faculty.id)
-  );
+  const filteredFaculties = faculties.filter(faculty => {
+    // Check if faculty has reached their limit for the student's category
+    const studentType = userData?.studentType?.toLowerCase() || "unknown";
+    const facultyAcceptedCount = facultyLimits[faculty.id]?.[studentType] || 0;
+    const facultyLimit = parseInt(faculty[`${studentType}Limit`]) || 0;
+    const isLimitReached = facultyLimit > 0 && facultyAcceptedCount >= facultyLimit;
 
-  // Apply to Faculty
+    return (
+      (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
+      (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      !appliedFaculties.some(app => app.facultyId === faculty.id) &&
+      !isLimitReached
+    );
+  });
+
+  // Add this after the filteredFaculties definition
+  const remainingSlots = maxApplications - appliedFaculties.length;
+
+  // Modify the handleApply function
   const handleApply = async (faculty) => {
     if (!user) {
       toast.error("You must be logged in to apply.");
+      return;
+    }
+
+    if (appliedFaculties.length >= maxApplications) {
+      toast.error(`You can only apply to ${maxApplications} faculties at a time. Please withdraw some applications first.`);
       return;
     }
 
@@ -197,7 +235,18 @@ export default function StudentDashboard() {
         </Select>
       </div>
 
-      {/* Applied Faculties Section - Now FULL WIDTH */}
+      {/* Application Slots Counter */}
+      <div className="bg-muted p-4 rounded-lg mb-4">
+        <h3 className="text-lg font-semibold mb-2">Application Slots</h3>
+        <div className="flex items-center justify-between">
+          <p>Available Slots: {remainingSlots} of {maxApplications}</p>
+          <Badge variant={remainingSlots > 0 ? "success" : "destructive"}>
+            {remainingSlots > 0 ? "Slots Available" : "No Slots Available"}
+          </Badge>
+        </div>
+      </div>
+
+      {/* Applied Faculties Section */}
       {appliedFaculties.length > 0 && (
         <div className="w-full">
           <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
