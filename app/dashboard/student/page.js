@@ -218,33 +218,33 @@ export default function StudentDashboard() {
     }
   };
 
-  // Add this helper function at the top level of the component
+  // Modify the getStatusStyles function for better contrast
   const getStatusStyles = (status) => {
     const statusLower = status?.toLowerCase();
     switch (statusLower) {
       case 'accepted':
         return {
-          row: 'bg-green-50 hover:bg-green-100/80',
-          expanded: 'bg-green-50/80',
+          row: 'bg-green-50 hover:bg-green-100/80 border-green-200',
+          expanded: 'bg-green-50/80 border-t border-green-200',
           text: 'text-green-700'
         };
       case 'rejected':
         return {
-          row: 'bg-red-50 hover:bg-red-100/80',
-          expanded: 'bg-red-50/80',
+          row: 'bg-red-50 hover:bg-red-100/80 border-red-200',
+          expanded: 'bg-red-50/80 border-t border-red-200',
           text: 'text-red-700'
         };
       case 'withdrawn':
         return {
-          row: 'bg-gray-50 hover:bg-gray-100/80',
-          expanded: 'bg-gray-50/80',
+          row: 'bg-gray-50 hover:bg-gray-100/80 border-gray-200',
+          expanded: 'bg-gray-50/80 border-t border-gray-200',
           text: 'text-gray-700'
         };
       default:
         return {
-          row: 'hover:bg-muted/50',
-          expanded: 'bg-muted/30',
-          text: ''
+          row: 'bg-white hover:bg-slate-50/80 border-slate-200',
+          expanded: 'bg-slate-50/80 border-t border-slate-200',
+          text: 'text-slate-900'
         };
     }
   };
@@ -432,7 +432,7 @@ export default function StudentDashboard() {
         ) : filteredFaculties.length === 0 ? (
           <p>No faculties available.</p>
         ) : (
-          <div className="rounded-md border">
+          <div className="rounded-md border border-slate-200 bg-white shadow-sm">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -446,24 +446,26 @@ export default function StudentDashboard() {
                   <>
                     <TableRow 
                       key={faculty.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className="cursor-pointer bg-white hover:bg-slate-50 border-b"
                       onClick={() => setExpandedFaculty(expandedFaculty === faculty.id ? null : faculty.id)}
                     >
-                      <TableCell className="flex items-center gap-2">
-                        <User className="h-4 w-4" />
+                      <TableCell className="flex items-center gap-2 text-slate-900">
+                        <User className="h-4 w-4 text-slate-500" />
                         {faculty.name || "Faculty"}
                         {expandedFaculty === faculty.id ? (
-                          <ChevronUp className="h-4 w-4" />
+                          <ChevronUp className="h-4 w-4 text-slate-500" />
                         ) : (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-4 w-4 text-slate-500" />
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-slate-900">
                         {faculty.facultyDomains?.join(", ") || "N/A"}
                       </TableCell>
                       <TableCell>
                         <Button
                           size="sm"
+                          variant="outline"
+                          className="hover:bg-primary hover:text-white transition-colors"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleApply(faculty);
@@ -474,33 +476,33 @@ export default function StudentDashboard() {
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === faculty.id && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="bg-muted/30">
+                      <TableRow className="bg-slate-50 border-b">
+                        <TableCell colSpan={3}>
                           <div className="p-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <h4 className="font-medium mb-2">Department(s)</h4>
-                                <p>{faculty.facultyDepartment?.join(", ") || "N/A"}</p>
+                                <h4 className="font-medium mb-2 text-slate-900">Department(s)</h4>
+                                <p className="text-slate-700">{faculty.facultyDepartment?.join(", ") || "N/A"}</p>
                               </div>
                               <div>
-                                <h4 className="font-medium mb-2">Employee ID</h4>
-                                <p>{faculty.empId || "N/A"}</p>
+                                <h4 className="font-medium mb-2 text-slate-900">Employee ID</h4>
+                                <p className="text-slate-700">{faculty.empId || "N/A"}</p>
                               </div>
                             </div>
                             <div>
-                              <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                              <h4 className="font-medium mb-2 text-slate-900">Student Intake Limits</h4>
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                  <p className="text-sm text-muted-foreground">UG Students</p>
-                                  <p>{faculty.ugLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-600">UG Students</p>
+                                  <p className="text-slate-700">{faculty.ugLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-muted-foreground">PG Students</p>
-                                  <p>{faculty.pgLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-600">PG Students</p>
+                                  <p className="text-slate-700">{faculty.pgLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-muted-foreground">Master's Students</p>
-                                  <p>{faculty.mastersLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-600">Master's Students</p>
+                                  <p className="text-slate-700">{faculty.mastersLimit || "Not specified"}</p>
                                 </div>
                               </div>
                             </div>
