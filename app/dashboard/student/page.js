@@ -46,7 +46,14 @@ export default function StudentDashboard() {
         // Fetch current user data
         const userDoc = await getDoc(doc(db, "users", user.uid));
         if (userDoc.exists()) {
-          setUserData(userDoc.data());
+          const data = userDoc.data();
+          setUserData(data);
+          
+          // If student is already accepted, don't show any available faculties
+          if (data.isAccepted) {
+            setFaculties([]);
+            return;
+          }
         }
 
         // Fetch faculty users and their accepted applications count
@@ -138,6 +145,11 @@ export default function StudentDashboard() {
       return;
     }
 
+    if (userData?.isAccepted) {
+      toast.error("You have already been accepted by a faculty. You cannot apply to others.");
+      return;
+    }
+
     if (appliedFaculties.length >= maxApplications) {
       toast.error(`You can only apply to ${maxApplications} faculties at a time. Please withdraw some applications first.`);
       return;
@@ -149,7 +161,8 @@ export default function StudentDashboard() {
         studentId: user.uid,
         facultyId: faculty.id,
         facultyName: faculty.name,
-        studentName: userData?.name || "Student", // Use the user's actual name
+        studentName: userData?.name || "Student",
+        studentType: userData?.studentType || "unknown",
         status: "pending",
         appliedAt: new Date(),
       });
@@ -161,7 +174,6 @@ export default function StudentDashboard() {
       const appliedList = await Promise.all(
         applicationsSnapshot.docs.map(async (appDoc) => {
           const applicationData = { id: appDoc.id, ...appDoc.data() };
-
           const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
           return {
             ...applicationData,
@@ -205,6 +217,163 @@ export default function StudentDashboard() {
         return "secondary";
     }
   };
+
+  // Add this helper function at the top level of the component
+  const getStatusStyles = (status) => {
+    const statusLower = status?.toLowerCase();
+    switch (statusLower) {
+      case 'accepted':
+        return {
+          row: 'bg-green-50 hover:bg-green-100/80',
+          expanded: 'bg-green-50/80',
+          text: 'text-green-700'
+        };
+      case 'rejected':
+        return {
+          row: 'bg-red-50 hover:bg-red-100/80',
+          expanded: 'bg-red-50/80',
+          text: 'text-red-700'
+        };
+      case 'withdrawn':
+        return {
+          row: 'bg-gray-50 hover:bg-gray-100/80',
+          expanded: 'bg-gray-50/80',
+          text: 'text-gray-700'
+        };
+      default:
+        return {
+          row: 'hover:bg-muted/50',
+          expanded: 'bg-muted/30',
+          text: ''
+        };
+    }
+  };
+
+  if (userData?.isAccepted) {
+    return (
+      <div className="min-h-screen bg-background p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Hello, {userData?.name || "Student"}</h1>
+          <div className="flex gap-4">
+            <Button variant="outline" onClick={() => router.push("/dashboard/student/profile")} className="gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </Button>
+            <Button variant="destructive" onClick={logout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Logout
+            </Button>
+          </div>
+        </div>
+
+        <Card className="bg-green-50 border-green-200">
+          <CardHeader>
+            <CardTitle className="text-green-700">Congratulations!</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-green-600">
+              You have been accepted by a faculty. You cannot apply to other faculties.
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Show only the Applied Faculties section */}
+        {appliedFaculties.length > 0 && (
+          <div className="w-full">
+            <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[35%]">Faculty Name</TableHead>
+                    <TableHead className="w-[35%]">Domains</TableHead>
+                    <TableHead className="w-[15%]">Status</TableHead>
+                    <TableHead className="w-[15%]">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {appliedFaculties.map(application => (
+                    <>
+                      <TableRow 
+                        key={application.id}
+                        className={`cursor-pointer transition-colors ${getStatusStyles(application.status).row}`}
+                        onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
+                      >
+                        <TableCell className="flex items-center gap-2">
+                          <User className="h-4 w-4" />
+                          {application.facultyDetails?.name || "Faculty"}
+                          {expandedFaculty === application.id ? (
+                            <ChevronUp className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getBadgeVariant(application.status)}>
+                            {application.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWithdraw(application.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                      {expandedFaculty === application.id && (
+                        <TableRow className={getStatusStyles(application.status).expanded}>
+                          <TableCell colSpan={4}>
+                            <div className="p-4 space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <h4 className="font-medium mb-2">Department(s)</h4>
+                                  <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
+                                </div>
+                                <div>
+                                  <h4 className="font-medium mb-2">Employee ID</h4>
+                                  <p>{application.facultyDetails?.empId || "N/A"}</p>
+                                </div>
+                              </div>
+                              <div>
+                                <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">UG Students</p>
+                                    <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">PG Students</p>
+                                    <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm text-muted-foreground">Master's Students</p>
+                                    <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background p-6 space-y-6">
@@ -366,13 +535,7 @@ export default function StudentDashboard() {
                   <>
                     <TableRow 
                       key={application.id}
-                      className={`cursor-pointer hover:bg-muted/50 ${
-                        application.status.toLowerCase() === "accepted" 
-                          ? "bg-green-50 hover:bg-green-100" 
-                          : application.status.toLowerCase() === "rejected"
-                          ? "bg-red-50 hover:bg-red-100"
-                          : ""
-                      }`}
+                      className={`cursor-pointer transition-colors ${getStatusStyles(application.status).row}`}
                       onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
                     >
                       <TableCell className="flex items-center gap-2">
@@ -406,38 +569,34 @@ export default function StudentDashboard() {
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === application.id && (
-                      <TableRow className={
-                        application.status.toLowerCase() === "accepted" 
-                          ? "bg-green-50/70" 
-                          : application.status.toLowerCase() === "rejected"
-                          ? "bg-red-50/70"
-                          : "bg-muted/30"
-                      }>
-                        <TableCell colSpan={4} className="p-4 space-y-4">
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <h4 className="font-medium mb-2">Department(s)</h4>
-                              <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-2">Employee ID</h4>
-                              <p>{application.facultyDetails?.empId || "N/A"}</p>
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="font-medium mb-2">Student Intake Limits</h4>
-                            <div className="grid grid-cols-3 gap-4">
+                      <TableRow className={getStatusStyles(application.status).expanded}>
+                        <TableCell colSpan={4}>
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <p className="text-sm text-muted-foreground">UG Students</p>
-                                <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                <h4 className="font-medium mb-2">Department(s)</h4>
+                                <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
                               </div>
                               <div>
-                                <p className="text-sm text-muted-foreground">PG Students</p>
-                                <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                <h4 className="font-medium mb-2">Employee ID</h4>
+                                <p>{application.facultyDetails?.empId || "N/A"}</p>
                               </div>
-                              <div>
-                                <p className="text-sm text-muted-foreground">Master's Students</p>
-                                <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">UG Students</p>
+                                  <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">PG Students</p>
+                                  <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Master's Students</p>
+                                  <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                                </div>
                               </div>
                             </div>
                           </div>

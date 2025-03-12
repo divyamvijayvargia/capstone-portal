@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../../../context/AuthContext";
 import { db } from "../../../../firebase";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc, collection, getDocs } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Save } from "lucide-react";
 
 export default function FacultyProfileSettings() {
   const { user } = useAuth();
@@ -231,7 +232,8 @@ export default function FacultyProfileSettings() {
             </ScrollArea>
           </div>
 
-          <Button onClick={handleUpdate} className="w-full">
+          <Button onClick={handleUpdate} className="w-full gap-2">
+            <Save className="h-4 w-4" />
             Save Changes
           </Button>
         </CardContent>
