@@ -8,9 +8,17 @@ import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { LogOut, Settings, Trash2 } from "lucide-react";
+import { LogOut, Settings, Trash2, ChevronDown, ChevronUp, User } from "lucide-react";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
@@ -24,6 +32,7 @@ export default function StudentDashboard() {
   const [userData, setUserData] = useState(null);
   const [maxApplications] = useState(5); // Maximum allowed applications
   const [facultyLimits, setFacultyLimits] = useState({});
+  const [expandedFaculty, setExpandedFaculty] = useState(null);
 
   // Ensure component renders only on the client
   const [isClient, setIsClient] = useState(false);
@@ -246,68 +255,192 @@ export default function StudentDashboard() {
         </div>
       </div>
 
-      {/* Applied Faculties Section */}
-      {appliedFaculties.length > 0 && (
-        <div className="w-full">
-          <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {appliedFaculties.map(application => (
-              <Card key={application.id} className="p-4">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>
-                    {application.facultyDetails?.name || "Faculty"}
-                  </CardTitle>
-                  <Badge variant={getBadgeVariant(application.status)}>
-                    {application.status}
-                  </Badge>
-                </CardHeader>
-                <CardContent>
-                  <p>Domains: {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}</p>
-                  <div className="flex justify-between items-center mt-4">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleWithdraw(application.id)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Withdraw
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Available Faculties Section */}
       <div className="w-full">
         <h2 className="text-2xl font-semibold mb-4">Available Faculties</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {loading ? (
-            <p>Loading faculties...</p>
-          ) : filteredFaculties.length === 0 ? (
-            <p>No faculties available.</p>
-          ) : (
-            filteredFaculties.map(faculty => (
-              <Card key={faculty.id} className="p-4">
-                <CardHeader>
-                  <CardTitle>{faculty.name || "Faculty"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>Domains: {faculty.facultyDomains?.join(", ") || "N/A"}</p>
-                  <Button
-                    className="mt-4"
-                    onClick={() => handleApply(faculty)}
-                  >
-                    Apply
-                  </Button>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+        {loading ? (
+          <p>Loading faculties...</p>
+        ) : filteredFaculties.length === 0 ? (
+          <p>No faculties available.</p>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[40%]">Faculty Name</TableHead>
+                  <TableHead className="w-[40%]">Domains</TableHead>
+                  <TableHead className="w-[20%]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFaculties.map(faculty => (
+                  <>
+                    <TableRow 
+                      key={faculty.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => setExpandedFaculty(expandedFaculty === faculty.id ? null : faculty.id)}
+                    >
+                      <TableCell className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {faculty.name || "Faculty"}
+                        {expandedFaculty === faculty.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {faculty.facultyDomains?.join(", ") || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleApply(faculty);
+                          }}
+                        >
+                          Apply
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {expandedFaculty === faculty.id && (
+                      <TableRow>
+                        <TableCell colSpan={3} className="bg-muted/30">
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="font-medium mb-2">Department(s)</h4>
+                                <p>{faculty.facultyDepartment?.join(", ") || "N/A"}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium mb-2">Employee ID</h4>
+                                <p>{faculty.empId || "N/A"}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">UG Students</p>
+                                  <p>{faculty.ugLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">PG Students</p>
+                                  <p>{faculty.pgLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Master's Students</p>
+                                  <p>{faculty.mastersLimit || "Not specified"}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </div>
+
+      {/* Applied Faculties Section - Also convert to table format */}
+      {appliedFaculties.length > 0 && (
+        <div className="w-full">
+          <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[35%]">Faculty Name</TableHead>
+                  <TableHead className="w-[35%]">Domains</TableHead>
+                  <TableHead className="w-[15%]">Status</TableHead>
+                  <TableHead className="w-[15%]">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {appliedFaculties.map(application => (
+                  <>
+                    <TableRow 
+                      key={application.id}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
+                    >
+                      <TableCell className="flex items-center gap-2">
+                        <User className="h-4 w-4" />
+                        {application.facultyDetails?.name || "Faculty"}
+                        {expandedFaculty === application.id ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getBadgeVariant(application.status)}>
+                          {application.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleWithdraw(application.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {expandedFaculty === application.id && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="bg-muted/30">
+                          <div className="p-4 space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <h4 className="font-medium mb-2">Department(s)</h4>
+                                <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
+                              </div>
+                              <div>
+                                <h4 className="font-medium mb-2">Employee ID</h4>
+                                <p>{application.facultyDetails?.empId || "N/A"}</p>
+                              </div>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                              <div className="grid grid-cols-3 gap-4">
+                                <div>
+                                  <p className="text-sm text-muted-foreground">UG Students</p>
+                                  <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">PG Students</p>
+                                  <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-muted-foreground">Master's Students</p>
+                                  <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
