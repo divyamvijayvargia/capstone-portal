@@ -107,18 +107,67 @@ export default function FacultyDashboard() {
     }
 
     try {
+      // Get the current application to find student ID
+      const currentApp = applications.find(app => app.id === appId);
+      const studentId = currentApp?.studentId;
+
+      // Update the current application status
       await updateDoc(doc(db, "facultyApplications", appId), { status });
 
-      setApplications(applications.map(app =>
-        app.id === appId ? { ...app, status } : app
-      ));
-
       if (status === "Accepted") {
-        setAcceptedCounts({
-          ...acceptedCounts,
-          [studentType]: acceptedCounts[studentType] + 1
+        // Get all applications from this student
+        const studentAppsQuery = query(
+          collection(db, "facultyApplications"),
+          where("studentId", "==", studentId)
+        );
+        const studentAppsSnapshot = await getDocs(studentAppsQuery);
+
+        // Withdraw all other applications
+        const withdrawPromises = studentAppsSnapshot.docs.map(async (appDoc) => {
+          if (appDoc.id !== appId) {  // Don't withdraw the accepted application
+            await updateDoc(doc(db, "facultyApplications", appDoc.id), { status: "Withdrawn" });
+          }
+        });
+
+        await Promise.all(withdrawPromises);
+
+        // Update user document to mark as accepted
+        await updateDoc(doc(db, "users", studentId), {
+          isAccepted: true,
+          acceptedFacultyId: user.uid,
+          acceptedAt: new Date()
         });
       }
+
+      // Refresh applications list
+      const applicationsQuery = query(
+        collection(db, "facultyApplications"),
+        where("facultyId", "==", user.uid)
+      );
+      const applicationsSnapshot = await getDocs(applicationsQuery);
+
+      const facultyApps = await Promise.all(
+        applicationsSnapshot.docs.map(async (appDoc) => {
+          const applicationData = { id: appDoc.id, ...appDoc.data() };
+          const studentDoc = await getDoc(doc(db, "users", applicationData.studentId));
+          if (studentDoc.exists()) {
+            applicationData.studentDetails = studentDoc.data();
+          }
+          return applicationData;
+        })
+      );
+
+      setApplications(facultyApps);
+
+      // Update accepted counts
+      const counts = facultyApps.reduce((acc, app) => {
+        if (app.status === "Accepted" && app.studentDetails?.studentType) {
+          acc[app.studentDetails.studentType]++;
+        }
+        return acc;
+      }, { ug: 0, pg: 0, masters: 0 });
+
+      setAcceptedCounts(counts);
 
       toast.success(`Application ${status.toLowerCase()} successfully!`);
     } catch (error) {

@@ -366,7 +366,13 @@ export default function StudentDashboard() {
                   <>
                     <TableRow 
                       key={application.id}
-                      className="cursor-pointer hover:bg-muted/50"
+                      className={`cursor-pointer hover:bg-muted/50 ${
+                        application.status.toLowerCase() === "accepted" 
+                          ? "bg-green-50 hover:bg-green-100" 
+                          : application.status.toLowerCase() === "rejected"
+                          ? "bg-red-50 hover:bg-red-100"
+                          : ""
+                      }`}
                       onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
                     >
                       <TableCell className="flex items-center gap-2">
@@ -400,34 +406,38 @@ export default function StudentDashboard() {
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === application.id && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="bg-muted/30">
-                          <div className="p-4 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                              <div>
-                                <h4 className="font-medium mb-2">Department(s)</h4>
-                                <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
-                              </div>
-                              <div>
-                                <h4 className="font-medium mb-2">Employee ID</h4>
-                                <p>{application.facultyDetails?.empId || "N/A"}</p>
-                              </div>
+                      <TableRow className={
+                        application.status.toLowerCase() === "accepted" 
+                          ? "bg-green-50/70" 
+                          : application.status.toLowerCase() === "rejected"
+                          ? "bg-red-50/70"
+                          : "bg-muted/30"
+                      }>
+                        <TableCell colSpan={4} className="p-4 space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Department(s)</h4>
+                              <p>{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
                             </div>
                             <div>
-                              <h4 className="font-medium mb-2">Student Intake Limits</h4>
-                              <div className="grid grid-cols-3 gap-4">
-                                <div>
-                                  <p className="text-sm text-muted-foreground">UG Students</p>
-                                  <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">PG Students</p>
-                                  <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
-                                </div>
-                                <div>
-                                  <p className="text-sm text-muted-foreground">Master's Students</p>
-                                  <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
-                                </div>
+                              <h4 className="font-medium mb-2">Employee ID</h4>
+                              <p>{application.facultyDetails?.empId || "N/A"}</p>
+                            </div>
+                          </div>
+                          <div>
+                            <h4 className="font-medium mb-2">Student Intake Limits</h4>
+                            <div className="grid grid-cols-3 gap-4">
+                              <div>
+                                <p className="text-sm text-muted-foreground">UG Students</p>
+                                <p>{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">PG Students</p>
+                                <p>{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                              </div>
+                              <div>
+                                <p className="text-sm text-muted-foreground">Master's Students</p>
+                                <p>{application.facultyDetails?.mastersLimit || "Not specified"}</p>
                               </div>
                             </div>
                           </div>
