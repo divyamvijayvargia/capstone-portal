@@ -111,32 +111,43 @@ export default function FacultyDashboard() {
       const currentApp = applications.find(app => app.id === appId);
       const studentId = currentApp?.studentId;
 
-      // Update the current application status
+      // First, just update the current application status
       await updateDoc(doc(db, "facultyApplications", appId), { status });
-
+      
+      // If accepting, handle the additional updates
       if (status === "Accepted") {
-        // Get all applications from this student
-        const studentAppsQuery = query(
-          collection(db, "facultyApplications"),
-          where("studentId", "==", studentId)
-        );
-        const studentAppsSnapshot = await getDocs(studentAppsQuery);
-
-        // Withdraw all other applications
-        const withdrawPromises = studentAppsSnapshot.docs.map(async (appDoc) => {
-          if (appDoc.id !== appId) {  // Don't withdraw the accepted application
-            await updateDoc(doc(db, "facultyApplications", appDoc.id), { status: "Withdrawn" });
+        try {
+          // Update user document to mark as accepted
+          await updateDoc(doc(db, "users", studentId), {
+            isAccepted: true,
+            acceptedFacultyId: user.uid,
+            acceptedAt: new Date()
+          });
+          
+          // Get all applications from this student
+          const studentAppsQuery = query(
+            collection(db, "facultyApplications"),
+            where("studentId", "==", studentId)
+          );
+          const studentAppsSnapshot = await getDocs(studentAppsQuery);
+          
+          // Update other applications one by one (not using Promise.all)
+          for (const appDoc of studentAppsSnapshot.docs) {
+            if (appDoc.id !== appId) {  // Don't withdraw the accepted application
+              try {
+                await updateDoc(doc(db, "facultyApplications", appDoc.id), { 
+                  status: "Withdrawn" 
+                });
+              } catch (updateError) {
+                console.error("Error updating application:", updateError);
+                // Continue with other updates even if one fails
+              }
+            }
           }
-        });
-
-        await Promise.all(withdrawPromises);
-
-        // Update user document to mark as accepted
-        await updateDoc(doc(db, "users", studentId), {
-          isAccepted: true,
-          acceptedFacultyId: user.uid,
-          acceptedAt: new Date()
-        });
+        } catch (acceptError) {
+          console.error("Error in accept process:", acceptError);
+          // The main application is already updated, so we'll continue
+        }
       }
 
       // Refresh applications list

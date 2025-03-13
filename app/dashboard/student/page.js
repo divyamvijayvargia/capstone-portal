@@ -128,11 +128,11 @@ export default function StudentDashboard() {
     const isLimitReached = facultyLimit > 0 && facultyAcceptedCount >= facultyLimit;
 
     return (
-      (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
-      (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
+    (selectedDomain === "all" || faculty.facultyDomains?.includes(selectedDomain)) &&
+    (faculty.name?.toLowerCase().includes(searchTerm.toLowerCase())) &&
       !appliedFaculties.some(app => app.facultyId === faculty.id) &&
       !isLimitReached
-    );
+  );
   });
 
   // Add this after the filteredFaculties definition
@@ -386,18 +386,18 @@ export default function StudentDashboard() {
           <p className="text-slate-900 font-medium">Available Slots: {remainingSlots} of {maxApplications}</p>
           <Badge variant="secondary" className="bg-slate-300 text-slate-900 border border-slate-400">
             {remainingSlots > 0 ? "Slots Available" : "No Slots Available"}
-          </Badge>
+                  </Badge>
         </div>
       </div>
 
       {/* Available Faculties Section */}
       <div className="w-full">
         <h2 className="text-2xl font-semibold mb-4">Available Faculties</h2>
-        {loading ? (
-          <p>Loading faculties...</p>
-        ) : filteredFaculties.length === 0 ? (
-          <p>No faculties available.</p>
-        ) : (
+          {loading ? (
+            <p>Loading faculties...</p>
+          ) : filteredFaculties.length === 0 ? (
+            <p>No faculties available.</p>
+          ) : (
           <div className="rounded-md border border-slate-300 bg-slate-100 shadow-sm">
             <Table>
               <TableHeader>
@@ -428,7 +428,7 @@ export default function StudentDashboard() {
                         {faculty.facultyDomains?.join(", ") || "N/A"}
                       </TableCell>
                       <TableCell>
-                        <Button
+                  <Button
                           size="sm"
                           variant="secondary"
                           className="hover:bg-slate-300"
@@ -436,9 +436,9 @@ export default function StudentDashboard() {
                             e.stopPropagation();
                             handleApply(faculty);
                           }}
-                        >
-                          Apply
-                        </Button>
+                  >
+                    Apply
+                  </Button>
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === faculty.id && (
@@ -480,7 +480,7 @@ export default function StudentDashboard() {
                 ))}
               </TableBody>
             </Table>
-          </div>
+        </div>
         )}
       </div>
 
