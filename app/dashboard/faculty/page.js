@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { db } from "../../../firebase";
-import { collection, getDocs, updateDoc, doc, getDoc, query, where } from "firebase/firestore";
+import { collection, getDocs, updateDoc, doc, getDoc, query, where, deleteDoc } from "firebase/firestore";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -131,16 +131,14 @@ export default function FacultyDashboard() {
           );
           const studentAppsSnapshot = await getDocs(studentAppsQuery);
           
-          // Update other applications one by one (not using Promise.all)
+          // Delete other applications instead of marking them as withdrawn
           for (const appDoc of studentAppsSnapshot.docs) {
-            if (appDoc.id !== appId) {  // Don't withdraw the accepted application
+            if (appDoc.id !== appId) {  // Don't delete the accepted application
               try {
-                await updateDoc(doc(db, "facultyApplications", appDoc.id), { 
-                  status: "Withdrawn" 
-                });
-              } catch (updateError) {
-                console.error("Error updating application:", updateError);
-                // Continue with other updates even if one fails
+                await deleteDoc(doc(db, "facultyApplications", appDoc.id));
+              } catch (deleteError) {
+                console.error("Error deleting application:", deleteError);
+                // Continue with other deletions even if one fails
               }
             }
           }

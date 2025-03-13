@@ -52,6 +52,31 @@ export default function StudentDashboard() {
           // If student is already accepted, don't show any available faculties
           if (data.isAccepted) {
             setFaculties([]);
+            
+            // If accepted, fetch only the accepted application
+            if (data.acceptedFacultyId) {
+              const acceptedAppQuery = query(
+                collection(db, "facultyApplications"),
+                where("studentId", "==", user.uid),
+                where("facultyId", "==", data.acceptedFacultyId),
+                where("status", "==", "Accepted")
+              );
+              const acceptedAppSnapshot = await getDocs(acceptedAppQuery);
+              
+              if (!acceptedAppSnapshot.empty) {
+                const acceptedAppDoc = acceptedAppSnapshot.docs[0];
+                const applicationData = { id: acceptedAppDoc.id, ...acceptedAppDoc.data() };
+                const facultyDoc = await getDoc(doc(db, "users", applicationData.facultyId));
+                
+                setAppliedFaculties([{
+                  ...applicationData,
+                  facultyDetails: facultyDoc.exists() ? facultyDoc.data() : null
+                }]);
+              } else {
+                setAppliedFaculties([]);
+              }
+            }
+            
             return;
           }
         }
@@ -192,6 +217,15 @@ export default function StudentDashboard() {
 
   // Withdraw Application
   const handleWithdraw = async (applicationId) => {
+    // Get the application to check its status
+    const applicationToWithdraw = appliedFaculties.find(app => app.id === applicationId);
+    
+    // Prevent withdrawing an accepted application
+    if (applicationToWithdraw?.status === "Accepted" || userData?.isAccepted) {
+      toast.error("You cannot withdraw an accepted application.");
+      return;
+    }
+    
     try {
       await deleteDoc(doc(db, "facultyApplications", applicationId));
 
@@ -238,105 +272,55 @@ export default function StudentDashboard() {
           </CardHeader>
           <CardContent>
             <p className="text-green-600">
-              You have been accepted by a faculty. You cannot apply to other faculties.
+              You have been accepted by a faculty. Your application has been confirmed and all other applications have been automatically removed.
             </p>
           </CardContent>
         </Card>
 
-        {/* Show only the Applied Faculties section */}
-        {appliedFaculties.length > 0 && (
-          <div className="w-full">
-            <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
-            <div className="rounded-md border border-slate-300 bg-slate-100 shadow-sm">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-200 border-b border-slate-300">
-                    <TableHead className="w-[35%] font-semibold text-slate-900">Faculty Name</TableHead>
-                    <TableHead className="w-[35%] font-semibold text-slate-900">Domains</TableHead>
-                    <TableHead className="w-[15%] font-semibold text-slate-900">Status</TableHead>
-                    <TableHead className="w-[15%] font-semibold text-slate-900">Action</TableHead>
+        {/* Show only the Accepted Faculty section */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold">Your Accepted Faculty</h2>
+          {appliedFaculties.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Faculty Name</TableHead>
+                  <TableHead>Domains</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {appliedFaculties.map(application => (
+                  <TableRow 
+                    key={application.id}
+                    className="cursor-pointer bg-slate-100 hover:bg-slate-200 border-b border-slate-300"
+                  >
+                    <TableCell className="flex items-center gap-2 text-slate-900">
+                      <User className="h-4 w-4 text-slate-700" />
+                      {application.facultyDetails?.name || "Faculty"}
+                    </TableCell>
+                    <TableCell className="text-slate-900">
+                      {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="success" className="text-white bg-green-600 hover:bg-green-700">
+                        Accepted
+                      </Badge>
+                    </TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {appliedFaculties.map(application => (
-                    <>
-                      <TableRow 
-                        key={application.id}
-                        className="cursor-pointer bg-slate-100 hover:bg-slate-200 border-b border-slate-300"
-                        onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
-                      >
-                        <TableCell className="flex items-center gap-2 text-slate-900">
-                          <User className="h-4 w-4 text-slate-700" />
-                          {application.facultyDetails?.name || "Faculty"}
-                          {expandedFaculty === application.id ? (
-                            <ChevronUp className="h-4 w-4 text-slate-700" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-slate-700" />
-                          )}
-                        </TableCell>
-                        <TableCell className="text-slate-900">
-                          {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary" className="text-slate-900 bg-slate-200 hover:bg-slate-300">
-                            {application.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleWithdraw(application.id);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                      {expandedFaculty === application.id && (
-                        <TableRow className="bg-slate-200 border-b border-slate-300">
-                          <TableCell colSpan={4}>
-                            <div className="p-4 space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                  <h4 className="font-medium mb-2 text-slate-900">Department(s)</h4>
-                                  <p className="text-slate-800">{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
-                                </div>
-                                <div>
-                                  <h4 className="font-medium mb-2 text-slate-900">Employee ID</h4>
-                                  <p className="text-slate-800">{application.facultyDetails?.empId || "N/A"}</p>
-                                </div>
-                              </div>
-                              <div>
-                                <h4 className="font-medium mb-2 text-slate-900">Student Intake Limits</h4>
-                                <div className="grid grid-cols-3 gap-4">
-                                  <div>
-                                    <p className="text-sm text-slate-800">UG Students</p>
-                                    <p className="text-slate-800">{application.facultyDetails?.ugLimit || "Not specified"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-slate-800">PG Students</p>
-                                    <p className="text-slate-800">{application.facultyDetails?.pgLimit || "Not specified"}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-sm text-slate-800">Master's Students</p>
-                                    <p className="text-slate-800">{application.facultyDetails?.mastersLimit || "Not specified"}</p>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        )}
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-muted-foreground">Your accepted faculty information is loading...</p>
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
     );
   }
