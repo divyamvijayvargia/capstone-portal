@@ -206,11 +206,11 @@ export default function StudentDashboard() {
     }
   };
 
-  // Simplify the getStatusStyles function to use neutral colors
+  // Update the getStatusStyles function for better contrast
   const getStatusStyles = (status) => {
     return {
-      row: 'bg-white hover:bg-slate-50 border-b',
-      expanded: 'bg-slate-50 border-t',
+      row: 'bg-slate-100 hover:bg-slate-200 border-b border-slate-300',
+      expanded: 'bg-slate-200 border-t border-slate-300',
       text: 'text-slate-900'
     };
   };
@@ -247,14 +247,14 @@ export default function StudentDashboard() {
         {appliedFaculties.length > 0 && (
           <div className="w-full">
             <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
-            <div className="rounded-md border bg-white">
+            <div className="rounded-md border border-slate-300 bg-slate-100 shadow-sm">
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-slate-50">
-                    <TableHead className="w-[35%] font-semibold">Faculty Name</TableHead>
-                    <TableHead className="w-[35%] font-semibold">Domains</TableHead>
-                    <TableHead className="w-[15%] font-semibold">Status</TableHead>
-                    <TableHead className="w-[15%] font-semibold">Action</TableHead>
+                  <TableRow className="bg-slate-200 border-b border-slate-300">
+                    <TableHead className="w-[35%] font-semibold text-slate-900">Faculty Name</TableHead>
+                    <TableHead className="w-[35%] font-semibold text-slate-900">Domains</TableHead>
+                    <TableHead className="w-[15%] font-semibold text-slate-900">Status</TableHead>
+                    <TableHead className="w-[15%] font-semibold text-slate-900">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -262,29 +262,29 @@ export default function StudentDashboard() {
                     <>
                       <TableRow 
                         key={application.id}
-                        className="cursor-pointer bg-white hover:bg-slate-50 border-b"
+                        className="cursor-pointer bg-slate-100 hover:bg-slate-200 border-b border-slate-300"
                         onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
                       >
                         <TableCell className="flex items-center gap-2 text-slate-900">
-                          <User className="h-4 w-4 text-slate-500" />
+                          <User className="h-4 w-4 text-slate-700" />
                           {application.facultyDetails?.name || "Faculty"}
                           {expandedFaculty === application.id ? (
-                            <ChevronUp className="h-4 w-4 text-slate-500" />
+                            <ChevronUp className="h-4 w-4 text-slate-700" />
                           ) : (
-                            <ChevronDown className="h-4 w-4 text-slate-500" />
+                            <ChevronDown className="h-4 w-4 text-slate-700" />
                           )}
                         </TableCell>
                         <TableCell className="text-slate-900">
                           {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline">
+                          <Badge variant="secondary" className="text-slate-900 bg-slate-200 hover:bg-slate-300">
                             {application.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <Button
-                            variant="outline"
+                            variant="secondary"
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -296,33 +296,33 @@ export default function StudentDashboard() {
                         </TableCell>
                       </TableRow>
                       {expandedFaculty === application.id && (
-                        <TableRow className="bg-slate-50">
+                        <TableRow className="bg-slate-200 border-b border-slate-300">
                           <TableCell colSpan={4}>
                             <div className="p-4 space-y-4">
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <h4 className="font-medium mb-2 text-slate-900">Department(s)</h4>
-                                  <p className="text-slate-700">{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
+                                  <p className="text-slate-800">{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
                                 </div>
                                 <div>
                                   <h4 className="font-medium mb-2 text-slate-900">Employee ID</h4>
-                                  <p className="text-slate-700">{application.facultyDetails?.empId || "N/A"}</p>
+                                  <p className="text-slate-800">{application.facultyDetails?.empId || "N/A"}</p>
                                 </div>
                               </div>
                               <div>
                                 <h4 className="font-medium mb-2 text-slate-900">Student Intake Limits</h4>
                                 <div className="grid grid-cols-3 gap-4">
                                   <div>
-                                    <p className="text-sm text-slate-600">UG Students</p>
-                                    <p className="text-slate-700">{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                    <p className="text-sm text-slate-800">UG Students</p>
+                                    <p className="text-slate-800">{application.facultyDetails?.ugLimit || "Not specified"}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm text-slate-600">PG Students</p>
-                                    <p className="text-slate-700">{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                    <p className="text-sm text-slate-800">PG Students</p>
+                                    <p className="text-slate-800">{application.facultyDetails?.pgLimit || "Not specified"}</p>
                                   </div>
                                   <div>
-                                    <p className="text-sm text-slate-600">Master's Students</p>
-                                    <p className="text-slate-700">{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                                    <p className="text-sm text-slate-800">Master's Students</p>
+                                    <p className="text-slate-800">{application.facultyDetails?.mastersLimit || "Not specified"}</p>
                                   </div>
                                 </div>
                               </div>
@@ -380,11 +380,11 @@ export default function StudentDashboard() {
       </div>
 
       {/* Application Slots Counter */}
-      <div className="bg-white border rounded-lg p-4 mb-4">
-        <h3 className="text-lg font-semibold mb-2">Application Slots</h3>
+      <div className="bg-slate-200 border border-slate-400 rounded-lg p-4 mb-4">
+        <h3 className="text-lg font-semibold mb-2 text-slate-900">Application Slots</h3>
         <div className="flex items-center justify-between">
-          <p className="text-slate-900">Available Slots: {remainingSlots} of {maxApplications}</p>
-          <Badge variant="outline">
+          <p className="text-slate-900 font-medium">Available Slots: {remainingSlots} of {maxApplications}</p>
+          <Badge variant="secondary" className="bg-slate-300 text-slate-900 border border-slate-400">
             {remainingSlots > 0 ? "Slots Available" : "No Slots Available"}
           </Badge>
         </div>
@@ -398,13 +398,13 @@ export default function StudentDashboard() {
         ) : filteredFaculties.length === 0 ? (
           <p>No faculties available.</p>
         ) : (
-          <div className="rounded-md border bg-white">
+          <div className="rounded-md border border-slate-300 bg-slate-100 shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="w-[40%] font-semibold">Faculty Name</TableHead>
-                  <TableHead className="w-[40%] font-semibold">Domains</TableHead>
-                  <TableHead className="w-[20%] font-semibold">Action</TableHead>
+                <TableRow className="bg-slate-200 border-b border-slate-300">
+                  <TableHead className="w-[40%] font-semibold text-slate-900">Faculty Name</TableHead>
+                  <TableHead className="w-[40%] font-semibold text-slate-900">Domains</TableHead>
+                  <TableHead className="w-[20%] font-semibold text-slate-900">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -412,16 +412,16 @@ export default function StudentDashboard() {
                   <>
                     <TableRow 
                       key={faculty.id}
-                      className="cursor-pointer bg-white hover:bg-slate-50 border-b"
+                      className="cursor-pointer bg-slate-100 hover:bg-slate-200 border-b border-slate-300"
                       onClick={() => setExpandedFaculty(expandedFaculty === faculty.id ? null : faculty.id)}
                     >
                       <TableCell className="flex items-center gap-2 text-slate-900">
-                        <User className="h-4 w-4 text-slate-500" />
+                        <User className="h-4 w-4 text-slate-700" />
                         {faculty.name || "Faculty"}
                         {expandedFaculty === faculty.id ? (
-                          <ChevronUp className="h-4 w-4 text-slate-500" />
+                          <ChevronUp className="h-4 w-4 text-slate-700" />
                         ) : (
-                          <ChevronDown className="h-4 w-4 text-slate-500" />
+                          <ChevronDown className="h-4 w-4 text-slate-700" />
                         )}
                       </TableCell>
                       <TableCell className="text-slate-900">
@@ -430,8 +430,8 @@ export default function StudentDashboard() {
                       <TableCell>
                         <Button
                           size="sm"
-                          variant="outline"
-                          className="hover:bg-slate-100"
+                          variant="secondary"
+                          className="hover:bg-slate-300"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleApply(faculty);
@@ -442,33 +442,33 @@ export default function StudentDashboard() {
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === faculty.id && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-200 border-b border-slate-300">
                         <TableCell colSpan={3}>
                           <div className="p-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <h4 className="font-medium mb-2 text-slate-900">Department(s)</h4>
-                                <p className="text-slate-700">{faculty.facultyDepartment?.join(", ") || "N/A"}</p>
+                                <p className="text-slate-800">{faculty.facultyDepartment?.join(", ") || "N/A"}</p>
                               </div>
                               <div>
                                 <h4 className="font-medium mb-2 text-slate-900">Employee ID</h4>
-                                <p className="text-slate-700">{faculty.empId || "N/A"}</p>
+                                <p className="text-slate-800">{faculty.empId || "N/A"}</p>
                               </div>
                             </div>
                             <div>
                               <h4 className="font-medium mb-2 text-slate-900">Student Intake Limits</h4>
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                  <p className="text-sm text-slate-600">UG Students</p>
-                                  <p className="text-slate-700">{faculty.ugLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">UG Students</p>
+                                  <p className="text-slate-800">{faculty.ugLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-slate-600">PG Students</p>
-                                  <p className="text-slate-700">{faculty.pgLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">PG Students</p>
+                                  <p className="text-slate-800">{faculty.pgLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-slate-600">Master's Students</p>
-                                  <p className="text-slate-700">{faculty.mastersLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">Master's Students</p>
+                                  <p className="text-slate-800">{faculty.mastersLimit || "Not specified"}</p>
                                 </div>
                               </div>
                             </div>
@@ -488,14 +488,14 @@ export default function StudentDashboard() {
       {appliedFaculties.length > 0 && (
         <div className="w-full">
           <h2 className="text-2xl font-semibold mb-4">Applied Faculties</h2>
-          <div className="rounded-md border bg-white">
+          <div className="rounded-md border border-slate-300 bg-slate-100 shadow-sm">
             <Table>
               <TableHeader>
-                <TableRow className="bg-slate-50">
-                  <TableHead className="w-[35%] font-semibold">Faculty Name</TableHead>
-                  <TableHead className="w-[35%] font-semibold">Domains</TableHead>
-                  <TableHead className="w-[15%] font-semibold">Status</TableHead>
-                  <TableHead className="w-[15%] font-semibold">Action</TableHead>
+                <TableRow className="bg-slate-200 border-b border-slate-300">
+                  <TableHead className="w-[35%] font-semibold text-slate-900">Faculty Name</TableHead>
+                  <TableHead className="w-[35%] font-semibold text-slate-900">Domains</TableHead>
+                  <TableHead className="w-[15%] font-semibold text-slate-900">Status</TableHead>
+                  <TableHead className="w-[15%] font-semibold text-slate-900">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -503,29 +503,29 @@ export default function StudentDashboard() {
                   <>
                     <TableRow 
                       key={application.id}
-                      className="cursor-pointer bg-white hover:bg-slate-50 border-b"
+                      className="cursor-pointer bg-slate-100 hover:bg-slate-200 border-b border-slate-300"
                       onClick={() => setExpandedFaculty(expandedFaculty === application.id ? null : application.id)}
                     >
                       <TableCell className="flex items-center gap-2 text-slate-900">
-                        <User className="h-4 w-4 text-slate-500" />
+                        <User className="h-4 w-4 text-slate-700" />
                         {application.facultyDetails?.name || "Faculty"}
                         {expandedFaculty === application.id ? (
-                          <ChevronUp className="h-4 w-4 text-slate-500" />
+                          <ChevronUp className="h-4 w-4 text-slate-700" />
                         ) : (
-                          <ChevronDown className="h-4 w-4 text-slate-500" />
+                          <ChevronDown className="h-4 w-4 text-slate-700" />
                         )}
                       </TableCell>
                       <TableCell className="text-slate-900">
                         {application.facultyDetails?.facultyDomains?.join(", ") || "N/A"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">
+                        <Badge variant="secondary" className="text-slate-900 bg-slate-200 hover:bg-slate-300">
                           {application.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Button
-                          variant="outline"
+                          variant="secondary"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -537,33 +537,33 @@ export default function StudentDashboard() {
                       </TableCell>
                     </TableRow>
                     {expandedFaculty === application.id && (
-                      <TableRow className="bg-slate-50">
+                      <TableRow className="bg-slate-200 border-b border-slate-300">
                         <TableCell colSpan={4}>
                           <div className="p-4 space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <h4 className="font-medium mb-2 text-slate-900">Department(s)</h4>
-                                <p className="text-slate-700">{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
+                                <p className="text-slate-800">{application.facultyDetails?.facultyDepartment?.join(", ") || "N/A"}</p>
                               </div>
                               <div>
                                 <h4 className="font-medium mb-2 text-slate-900">Employee ID</h4>
-                                <p className="text-slate-700">{application.facultyDetails?.empId || "N/A"}</p>
+                                <p className="text-slate-800">{application.facultyDetails?.empId || "N/A"}</p>
                               </div>
                             </div>
                             <div>
                               <h4 className="font-medium mb-2 text-slate-900">Student Intake Limits</h4>
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                  <p className="text-sm text-slate-600">UG Students</p>
-                                  <p className="text-slate-700">{application.facultyDetails?.ugLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">UG Students</p>
+                                  <p className="text-slate-800">{application.facultyDetails?.ugLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-slate-600">PG Students</p>
-                                  <p className="text-slate-700">{application.facultyDetails?.pgLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">PG Students</p>
+                                  <p className="text-slate-800">{application.facultyDetails?.pgLimit || "Not specified"}</p>
                                 </div>
                                 <div>
-                                  <p className="text-sm text-slate-600">Master's Students</p>
-                                  <p className="text-slate-700">{application.facultyDetails?.mastersLimit || "Not specified"}</p>
+                                  <p className="text-sm text-slate-800">Master's Students</p>
+                                  <p className="text-slate-800">{application.facultyDetails?.mastersLimit || "Not specified"}</p>
                                 </div>
                               </div>
                             </div>
