@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GraduationCap, Briefcase, Save } from "lucide-react";
+import { GraduationCap, Briefcase, Save, Plus, Trash2, Users } from "lucide-react";
 
 export default function ProfileSetup() {
   const { user } = useAuth();
@@ -42,7 +42,12 @@ export default function ProfileSetup() {
   const [ugLimit, setUgLimit] = useState("");
   const [pgLimit, setPgLimit] = useState("");
   const [mastersLimit, setMastersLimit] = useState("");
-  // const [emailError, setEmailError] = useState(""); First line of email verification
+  
+  // New state variables for team members
+  const [teamSize, setTeamSize] = useState(1);
+  const [teamMembers, setTeamMembers] = useState([
+    { name: "", registrationNumber: "", regError: "" }
+  ]);
 
   useEffect(() => {
     const fetchLists = async () => {
@@ -53,29 +58,13 @@ export default function ProfileSetup() {
       setDomains(domainSnapshot.docs.map(doc => doc.data().name));
     };
     fetchLists();
-
-    // Check if user's email is a VIT email
-    // if (user && user.email) {  Second line of email verification
-    //   validateEmail(user.email);
-    // }
   }, [user]);
-
-  // const validateEmail = (email) => { Third line of email verification
-  //   if (!email.endsWith("@vitstudent.ac.in")) {
-  //     setEmailError("You must use a VIT email ending with @vitstudent.ac.in");
-  //     return false;
-  //   }
-  //   setEmailError("");
-  //   return true;
-  // };
 
   const validateRegistrationNumber = (regNo) => {
     if (regNo.length !== 9) {
-      setRegistrationError("Registration number must be exactly 9 characters");
-      return false;
+      return "Registration number must be exactly 9 characters";
     }
-    setRegistrationError("");
-    return true;
+    return "";
   };
 
   const validateCgpa = (value) => {
@@ -91,7 +80,7 @@ export default function ProfileSetup() {
   const handleRegistrationChange = (e) => {
     const value = e.target.value;
     setRegistrationNumber(value);
-    validateRegistrationNumber(value);
+    setRegistrationError(validateRegistrationNumber(value));
   };
 
   const handleCgpaChange = (e) => {
@@ -100,13 +89,65 @@ export default function ProfileSetup() {
     validateCgpa(value);
   };
 
-  const handleSubmit = async () => {
-    // Check email validation first
-    // if (emailError) { Fourth line of email verification
-    //   toast.error(emailError);
-    //   return;
-    // }
+  // Handle change in team size
+  const handleTeamSizeChange = (e) => {
+    const size = parseInt(e.target.value);
+    setTeamSize(size);
+    
+    // Adjust team members array based on new size
+    if (size > teamMembers.length) {
+      // Add more empty team member objects
+      const newMembers = [...teamMembers];
+      for (let i = teamMembers.length; i < size; i++) {
+        newMembers.push({ name: "", registrationNumber: "", regError: "" });
+      }
+      setTeamMembers(newMembers);
+    } else if (size < teamMembers.length) {
+      // Remove excess team members
+      setTeamMembers(teamMembers.slice(0, size));
+    }
+  };
 
+  // Handle team member information changes
+  const handleTeamMemberChange = (index, field, value) => {
+    const updatedMembers = [...teamMembers];
+    
+    if (field === "registrationNumber") {
+      const regError = validateRegistrationNumber(value);
+      updatedMembers[index] = {
+        ...updatedMembers[index],
+        [field]: value,
+        regError
+      };
+    } else {
+      updatedMembers[index] = {
+        ...updatedMembers[index],
+        [field]: value
+      };
+    }
+    
+    setTeamMembers(updatedMembers);
+  };
+
+  const validateTeamMembers = () => {
+    let isValid = true;
+    const updatedMembers = teamMembers.map(member => {
+      // Skip validation for empty members if they're beyond the team size
+      if (teamSize > 1) {
+        const regError = validateRegistrationNumber(member.registrationNumber);
+        if (regError || !member.name) {
+          isValid = false;
+        }
+        return { ...member, regError };
+      }
+      return member;
+    });
+    
+    setTeamMembers(updatedMembers);
+    return isValid;
+  };
+
+  const handleSubmit = async () => {
     // Validate all required fields based on role
     if (!role || !name) {
       toast.error("Please fill all required fields.");
@@ -120,7 +161,7 @@ export default function ProfileSetup() {
       }
 
       // Validate registration number format
-      if (!validateRegistrationNumber(registrationNumber)) {
+      if (registrationError) {
         toast.error(registrationError);
         return;
       }
@@ -128,6 +169,12 @@ export default function ProfileSetup() {
       // Validate CGPA
       if (!validateCgpa(cgpa)) {
         toast.error(cgpaError);
+        return;
+      }
+
+      // Validate team members if team size is greater than 1
+      if (teamSize > 1 && !validateTeamMembers()) {
+        toast.error("Please fill all team member details correctly.");
         return;
       }
     }
@@ -154,6 +201,9 @@ export default function ProfileSetup() {
         ugLimit: role === "faculty" ? ugLimit : "",
         pgLimit: role === "faculty" ? pgLimit : "",
         mastersLimit: role === "faculty" ? mastersLimit : "",
+        // Add team information for students
+        teamSize: role === "student" ? teamSize : 1,
+        teamMembers: role === "student" && teamSize > 1 ? teamMembers : [],
       });
 
       toast.success("Profile saved successfully!");
@@ -174,26 +224,6 @@ export default function ProfileSetup() {
       prev.includes(department) ? prev.filter(d => d !== department) : [...prev, department]
     );
   };
-
-  // If there's an email error, show it prominently
-  // if (emailError) { Fifth line of email verification
-  //   return (
-  //     <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-  //       <Card className="max-w-md w-full">
-  //         <CardHeader>
-  //           <CardTitle className="text-2xl text-red-500">Email Restriction</CardTitle>
-  //           <CardDescription>
-  //             Access Denied
-  //           </CardDescription>
-  //         </CardHeader>
-  //         <CardContent>
-  //           <p className="text-red-500 mb-4">{emailError}</p>
-  //           <p>Please sign in with your VIT email address to continue.</p>
-  //         </CardContent>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -293,6 +323,73 @@ export default function ProfileSetup() {
                 />
                 {cgpaError && (
                   <p className="text-sm text-red-500 mt-1">{cgpaError}</p>
+                )}
+              </div>
+              
+              {/* Team Information Section */}
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  <h3 className="text-lg font-medium">Team Information</h3>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="teamSize">Team Size (including yourself)</Label>
+                  <Select 
+                    value={teamSize.toString()} 
+                    onValueChange={(val) => handleTeamSizeChange({ target: { value: val } })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select team size" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Just me (1)</SelectItem>
+                      <SelectItem value="2">2 members</SelectItem>
+                      <SelectItem value="3">3 members</SelectItem>
+                      <SelectItem value="4">4 members</SelectItem>
+                      <SelectItem value="5">5 members</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                {teamSize > 1 && (
+                  <div className="space-y-4">
+                    <Label>Team Member Details (excluding yourself)</Label>
+                    
+                    {teamMembers.slice(1).map((member, index) => (
+                      <Card key={index} className="p-4">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Team Member {index + 1}</span>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor={`member-${index}-name`}>Full Name</Label>
+                            <Input
+                              id={`member-${index}-name`}
+                              placeholder="Enter team member's full name"
+                              value={member.name}
+                              onChange={(e) => handleTeamMemberChange(index + 1, "name", e.target.value)}
+                            />
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor={`member-${index}-regNo`}>Registration Number</Label>
+                            <Input
+                              id={`member-${index}-regNo`}
+                              placeholder="Enter registration number (9 characters)"
+                              value={member.registrationNumber}
+                              onChange={(e) => handleTeamMemberChange(index + 1, "registrationNumber", e.target.value)}
+                              maxLength={9}
+                            />
+                            {member.regError && (
+                              <p className="text-sm text-red-500 mt-1">{member.regError}</p>
+                            )}
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
                 )}
               </div>
             </div>
